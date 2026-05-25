@@ -345,4 +345,82 @@
 
 ---
 
+## 📖 七、重要关键词汇
+
+### 7.1 动词类
+
+| 单词 | 音标 | 中文释义 | 英文释义 | 例句 |
+|:---|:---|:---|:---|:---|
+| **try** | /traɪ/ | 努力、尝试 | to make an effort to do something | I'm trying to work.（我正在努力工作。） |
+| **rain** | /reɪn/ | 下雨 | water that falls from the sky | It isn't raining now.（现在没下雨。） |
+| **listen** | /ˈlɪsn/ | 听 | to give attention to sound | I'm not listening to the radio.（我没在听收音机。） |
+| **have a great time** | /hæv ə ɡreɪt taɪm/ | 玩得很开心 | to enjoy oneself very much | She's having a great time.（她玩得很开心。） |
+| **learn** | /lɜːn/ | 学习 | to gain knowledge or skill | He's learning Japanese.（他正在学日语。） |
+| **speak** | /spiːk/ | 说话、交谈 | to say words | They're speaking to each other.（他们在互相说话。） |
+| **get** | /ɡet/ | 变得 | to become | It's getting worse.（情况变得更糟了。） |
+| **work** | /wɜːk/ | 工作、运转 | to do a job; to function | It's working now.（它现在能工作了。） |
+| **look for** | /lʊk fɔː/ | 寻找 | to search for someone or something | I'm looking for Sophie.（我在找 Sophie。） |
+| **build** | /bɪld/ | 建造 | to make something by putting parts together | They're building a hospital.（他们在建医院。） |
+| **enjoy** | /ɪnˈdʒɔɪ/ | 享受、喜欢 | to get pleasure from something | He's not enjoying his course.（他不喜欢这门课。） |
+| **change** | /tʃeɪndʒ/ | 变化 | to become different | The weather is changing.（天气正在变化。） |
+| **start** | /stɑːt/ | 开始 | to begin | He's starting to get bored.（他开始感到无聊。） |
+
+### 7.2 名词类
+
+| 单词 | 音标 | 中文释义 | 英文释义 | 例句 |
+|:---|:---|:---|:---|:---|
+| **noise** | /nɔɪz/ | 噪音、吵闹声 | a loud or unpleasant sound | Don't make so much noise.（不要这么吵。） |
+| **radio** | /ˈreɪdiəʊ/ | 收音机 | a device for listening to broadcasts | Turn off the radio.（关掉收音机。） |
+| **holiday** | /ˈhɒlədeɪ/ | 假期、度假 | a time of rest from work or school | She's on holiday.（她在度假。） |
+| **evening classes** | /ˈiːvnɪŋ ˈklɑːsɪz/ | 夜校、晚间课程 | classes that take place in the evening | He started evening classes.（他开始上夜校。） |
+| **argument** | /ˈɑːɡjumənt/ | 争吵、争论 | a disagreement or quarrel | They had an argument.（他们吵架了。） |
+| **situation** | /ˌsɪtʃuˈeɪʃn/ | 情况、局势 | the state of affairs | The situation is bad.（情况很糟。） |
+| **washing machine** | /ˈwɒʃɪŋ məˈʃiːn/ | 洗衣机 | a machine for washing clothes | The washing machine is working.（洗衣机在工作。） |
+| **hospital** | /ˈhɒspɪtl/ | 医院 | a place where sick people are treated | They're building a new hospital.（他们在建新医院。） |
+| **course** | /kɔːs/ | 课程 | a series of lessons | He's enjoying his course.（他喜欢这门课。） |
+| **weather** | /ˈweðə/ | 天气 | the state of the atmosphere | The weather is changing.（天气在变化。） |
+| **cloud** | /klaʊd/ | 云 | a white or grey mass in the sky | Look at those clouds.（看那些云。） |
+
+### 7.3 短语和表达
+
+| 短语 | 中文释义 | 英文释义 | 例句 |
+|:---|:---|:---|:---|
+| **make noise** | 制造噪音 | to produce loud sounds | Please don't make so much noise.（请不要这么吵。） |
+| **turn off** | 关掉 | to stop a machine working | Turn off the radio.（关掉收音机。） |
+| **on holiday** | 在度假 | away from work for a vacation | She's on holiday with friends.（她和朋友在度假。） |
+| **take the day off** | 请一天假 | to not work for one day | He's taken the day off.（他请了一天假。） |
+| **one another** | 互相 | each other | They're speaking to one another.（他们在互相说话。） |
+| **get bored** | 感到无聊 | to become bored | He's starting to get bored.（他开始感到无聊了。） |
+| **get worse** | 变得更糟 | to become worse | It's getting worse.（情况变得更糟了。） |
+
+### 7.4 易混淆词汇对比
+
+| 单词 | 中文释义 | 单词 | 中文释义 | 区别 |
+|:---|:---|:---|:---|:---|
+| **stare** | 盯着看 | **start** | 开始 | stare = look fixedly; start = begin |
+| **listen** | 听（有意识） | **hear** | 听见（无意识） | listen 强调动作，hear 强调结果 |
+| **speak** | 说话 | **talk** | 谈话 | speak 更正式，talk 更口语 |
+| **learn** | 学习 | **study** | 学习、研究 | learn 强调获得技能，study 强调研究过程 |
+| **work** | 工作/运转 | **job** | 工作（名词） | work 可作动词和名词，job 只作名词 |
+
+### 7.5 本节重点动词变化规则
+
+| 原形 | 现在分词 | 变化规则 |
+|:---|:---|:---|
+| try | trying | 一般加 -ing |
+| rain | raining | 一般加 -ing |
+| listen | listening | 一般加 -ing |
+| have | having | 去 e 加 -ing |
+| learn | learning | 一般加 -ing |
+| speak | speaking | 一般加 -ing |
+| get | getting | 双写 t 加 -ing |
+| work | working | 一般加 -ing |
+| look | looking | 一般加 -ing |
+| build | building | 一般加 -ing |
+| enjoy | enjoying | 一般加 -ing |
+| change | changing | 去 e 加 -ing |
+| start | starting | 一般加 -ing |
+
+---
+
 *文档整理完成，祝学习进步！* 📚
