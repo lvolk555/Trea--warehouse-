@@ -129,6 +129,110 @@ int main() {
 Green 的值是：1
 ```
 
+### 知识点补充：static_cast 类型转换
+
+上面的代码中出现了一个新面孔：`static_cast<int>(c)`。这是 C++ 推荐的类型转换写法，我们来正式认识它。
+
+在 C 语言中，你习惯这样转换类型：
+
+```c
+int x = (int)c;        // C 风格转换
+```
+
+C++ 提供了四种命名的转换操作符，`static_cast` 是最常用的一种。语法格式是：
+
+```
+static_cast<目标类型>(要转换的值)
+```
+
+它的作用是"告诉编译器：我知道这个转换是有意的，请执行它"。与 C 风格的 `(int)c` 相比，`static_cast` 有两个好处：
+
+- **显眼**：在代码中一眼就能看到这里发生了类型转换，方便排查 bug
+- **安全**：编译器会检查转换是否合理，不合理的转换会直接报错
+
+四种转换操作符一览（了解即可，目前只需要掌握 `static_cast`）：
+
+| 操作符 | 用途 | 例子 |
+|--------|------|------|
+| `static_cast` | 基本类型之间的转换 | `static_cast<int>(3.14)` |
+| `dynamic_cast` | 安全的向下转型（面向对象部分讲） | 后续课程 |
+| `const_cast` | 去掉或添加 const 属性 | 很少使用 |
+| `reinterpret_cast` | 位级别的重新解释 | 极少使用 |
+
+> **Java 对比**：Java 的类型转换写法 `int x = (int)c;` 和 C 风格一样。C++ 虽然也支持这种写法，但现代 C++ 强烈推荐用 `static_cast`，因为它更安全、更可搜索。
+
+### 枚举在内存中的存储
+
+枚举变量本质上是一个整数，占用的内存大小取决于底层类型（默认是 `int`，即 4 字节）：
+
+```cpp
+#include <iostream>
+#include <cstdint>
+
+enum class BigEnum : int { A, B, C };        // 底层类型 int，占 4 字节
+enum class SmallEnum : uint8_t { X, Y, Z };   // 底层类型 uint8_t，占 1 字节
+
+int main() {
+    std::cout << "BigEnum 大小: " << sizeof(BigEnum) << " 字节\n";
+    std::cout << "SmallEnum 大小: " << sizeof(SmallEnum) << " 字节\n";
+
+    // enum class 的值不能直接用 std::cout 输出
+    // 下面这行会编译错误：
+    // std::cout << BigEnum::A;  // 错误！没有匹配的 << 运算符
+
+    // 必须先转成整数才能输出
+    std::cout << "BigEnum::B 的值: " << static_cast<int>(BigEnum::B) << "\n";
+    return 0;
+}
+```
+
+运行结果：
+
+```text
+BigEnum 大小: 4 字节
+SmallEnum 大小: 1 字节
+BigEnum::B 的值: 1
+```
+
+> **为什么 `std::cout` 不能直接输出 `enum class`？** 因为 `enum class` 是强类型的，`std::cout` 的 `<<` 运算符没有为它定义输出行为。传统 `enum` 能直接输出，是因为它隐式转换成了 `int`，`cout` 输出的是那个整数。`enum class` 阻止了这种隐式转换，所以你必须手动 `static_cast`。
+
+### switch 与 enum class 的配合
+
+`switch` 语句和 `enum class` 是天生一对。用 `enum class` 做 switch 的判断条件时，编译器会检查你是否覆盖了所有枚举值，帮你避免遗漏：
+
+```cpp
+#include <iostream>
+
+enum class TrafficLight { Red, Green, Yellow };
+
+int main() {
+    TrafficLight light = TrafficLight::Green;
+
+    switch (light) {
+        case TrafficLight::Red:
+            std::cout << "停止\n";
+            break;
+        case TrafficLight::Green:
+            std::cout << "通行\n";
+            break;
+        case TrafficLight::Yellow:
+            std::cout << "注意\n";
+            break;
+        // 没有 default：如果将来添加了新枚举值但忘了处理
+        // 编译器会用警告提醒你
+    }
+    return 0;
+}
+```
+
+运行结果：
+
+```text
+通行
+```
+
+> **编程建议**：当 switch 的条件是 `enum class` 时，尽量不加 `default` 分支。这样当你将来在枚举里添加新值却忘了在 switch 里处理时，编译器的 `-Wall` 警告会提醒你。
+
 ### 传统枚举 vs 强类型枚举
 
 | 特性 | `enum`（传统） | `enum class`（现代） |
@@ -338,6 +442,87 @@ prices size: 2
 - **简化长类型名**：`std::vector<std::pair<std::string, int>>` 太长，起个短名
 - **提高可移植性**：在不同平台上用不同底层类型，只需改一处别名
 - **语义化命名**：`using EmployeeId = int;` 比直接写 `int` 更有表达力
+
+### 知识点补充：auto 关键字
+
+在前面的代码示例中，你可能注意到了一个关键词 `auto`：
+
+```cpp
+for (const auto& name : names) {    // auto 是什么？
+    std::cout << name << " ";
+}
+```
+
+`auto` 让编译器**自动推导变量的类型**。你不用手写类型名，编译器会根据等号右边的表达式自动推断。
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <string>
+
+int main() {
+    auto x = 42;            // 编译器推导为 int
+    auto y = 3.14;          // 编译器推导为 double
+    auto z = 3.14f;         // 编译器推导为 float（f 后缀）
+    auto s = std::string("Hello");  // 编译器推导为 std::string
+    auto v = std::vector<int>{1, 2, 3};  // 推导为 std::vector<int>
+
+    std::cout << x << " " << y << " " << z << " " << s << "\n";
+    std::cout << "v.size() = " << v.size() << "\n";
+    return 0;
+}
+```
+
+运行结果：
+
+```text
+42 3.14 3.14 Hello
+v.size() = 3
+```
+
+**auto 在范围 for 循环中的用法**：
+
+```cpp
+std::vector<int> nums = {1, 2, 3};
+
+// 方式一：明确写出类型
+for (const int& n : nums) { ... }
+
+// 方式二：用 auto，编译器自动推导为 const int&
+for (const auto& n : nums) { ... }
+
+// 方式三：auto 不加引用 —— 会拷贝一份，修改不影响原数据
+for (auto n : nums) { ... }
+
+// 方式四：auto 加引用但不加 const —— 可以修改原数据
+for (auto& n : nums) { n *= 2; }
+```
+
+各写法的区别：
+
+| 写法 | 是否拷贝 | 能否修改原数据 | 推荐场景 |
+|------|---------|---------------|---------|
+| `for (auto n : nums)` | 是（拷贝） | 否 | 只读，且类型很小（int 等） |
+| `for (auto& n : nums)` | 否（引用） | 是 | 需要修改原数据 |
+| `for (const auto& n : nums)` | 否（引用） | 否 | 只读，且类型较大（string 等） |
+
+> **新手建议**：范围 for 循环默认用 `for (const auto& x : container)`，需要修改时再去掉 `const`。这样既避免了不必要的拷贝，又防止意外修改。
+
+> **Java 对比**：Java 的 `var`（Java 10 引入）和 C++ 的 `auto` 类似，都是让编译器推导类型。但 Java 的 `var` 只能用于局部变量，C++ 的 `auto` 使用范围更广。
+
+### 知识点补充：decltype 简介
+
+`decltype` 和 `auto` 是一对兄弟。`auto` 是"根据右值推导类型"，`decltype` 是"根据表达式推导类型"：
+
+```cpp
+int x = 42;
+decltype(x) y = 10;  // y 的类型和 x 一样，都是 int
+
+auto a = 3.14;        // a 是 double
+decltype(a) b = 2.0;  // b 也是 double
+```
+
+`decltype` 在模板编程中用得最多，日常编程中偶尔会遇到。目前了解即可。
 
 ### 小练习
 
@@ -562,6 +747,85 @@ int main() {
 Hello, Alice
 ```
 
+### using 声明 vs using 指令
+
+前面出现了两种 `using` 写法，容易混淆，这里对比清楚：
+
+| 写法 | 名称 | 效果 | 风险 |
+|------|------|------|------|
+| `using std::cout;` | using 声明 | 只引入一个名字 | 安全，推荐 |
+| `using namespace std;` | using 指令 | 引入整个命名空间的所有名字 | 可能冲突，需谨慎 |
+
+```cpp
+// using 声明：精确引入，只放开一个名字
+using std::cout;    // 此后只需写 cout，但 cin、string 仍需加 std::
+using std::endl;    // 此后只需写 endl
+
+// using 指令：全部放开，所有名字都不用加前缀
+using namespace std;  // cout、cin、string、vector... 全部可用
+```
+
+> **编程建议**：优先用 `using` 声明（`using std::cout;`），尽量少用 `using` 指令（`using namespace std;`）。引入的名字越少，冲突的风险越低。
+
+### 命名空间别名
+
+如果命名空间的名字太长，可以给它起一个短名字，类似 `using` 给类型起别名：
+
+```cpp
+#include <iostream>
+
+namespace VeryLongNamespaceName {
+    int value = 42;
+}
+
+int main() {
+    // 给长命名空间起短名
+    namespace Short = VeryLongNamespaceName;
+    std::cout << Short::value << "\n";  // 等价于 VeryLongNamespaceName::value
+    return 0;
+}
+```
+
+运行结果：
+
+```text
+42
+```
+
+### 匿名命名空间
+
+有一种特殊的命名空间没有名字，叫匿名命名空间。它的作用是让里面的内容**只在当前文件内可见**，其他文件访问不到：
+
+```cpp
+#include <iostream>
+
+// 匿名命名空间：里面的东西只在当前 .cpp 文件内有效
+namespace {
+    int secretNumber = 99;
+    void internalFunc() {
+        std::cout << "内部函数被调用\n";
+    }
+}
+
+int main() {
+    // 在同一文件里可以直接用，不需要前缀
+    std::cout << "secret = " << secretNumber << "\n";
+    internalFunc();
+    return 0;
+}
+```
+
+运行结果：
+
+```text
+secret = 99
+内部函数被调用
+```
+
+> **C 语言对比**：匿名命名空间相当于 C 语言中的 `static` 全局变量/函数——限制作用域在当前文件内。C++ 推荐用匿名命名空间替代 `static`，因为语义更清晰。
+>
+> **什么时候用**：当你写一个只在当前 `.cpp` 文件内使用的辅助函数或常量时，放进匿名命名空间，防止链接器把它暴露给其他文件。
+
 ### Java 对比
 
 | 概念 | Java | C++ |
@@ -752,6 +1016,95 @@ int main() {
 | 静态局部变量 | 全局数据区 | 第一次执行到声明时 | 程序结束时 | 自动初始化为 0 |
 
 > **新手陷阱**：局部变量不初始化时，值是内存里残留的随机垃圾值。养成声明变量时就初始化的习惯：`int x = 0;` 而不是 `int x;`。
+
+### 知识点补充：作用域解析运算符 ::
+
+当局部变量和全局变量同名时，局部变量会"遮蔽"全局变量。用 `::` 可以显式访问全局变量（前面不加任何名字的 `::` 表示"全局作用域"）：
+
+```cpp
+#include <iostream>
+
+int x = 100;  // 全局变量
+
+int main() {
+    int x = 50;  // 局部变量，遮蔽了全局的 x
+
+    std::cout << "局部 x = " << x << "\n";      // 输出 50
+    std::cout << "全局 x = " << ::x << "\n";     // 输出 100
+
+    return 0;
+}
+```
+
+运行结果：
+
+```text
+局部 x = 50
+全局 x = 100
+```
+
+> **编程建议**：尽量不要让局部变量和全局变量同名。虽然 `::` 能区分，但可读性差，容易出错。
+
+### 知识点补充：extern 关键字
+
+如果一个全局变量定义在 A 文件里，你想在 B 文件里使用它，就需要用 `extern` 声明它"在别处定义"：
+
+```cpp
+// ===== file_a.cpp =====
+int sharedCounter = 0;  // 定义（分配内存）
+
+// ===== file_b.cpp =====
+#include <iostream>
+extern int sharedCounter;  // 声明：告诉编译器"这个变量在别处定义"
+
+int main() {
+    std::cout << "sharedCounter = " << sharedCounter << "\n";
+    return 0;
+}
+```
+
+`extern` 不创建新变量，只是告诉编译器"这个变量存在，但在另一个文件里定义"。链接器会在链接阶段找到它。
+
+> **Java 对比**：Java 没有这种跨文件共享全局变量的机制。Java 通过 `public static` 字段和类访问来实现类似功能。
+>
+> **实际用途**：在大型项目中，全局配置变量通常定义在一个 `.cpp` 文件里，通过头文件中的 `extern` 声明让其他文件使用。但在现代 C++ 中，更推荐用命名空间 + `inline` 变量（C++17）来替代 `extern`。
+
+### 栈与堆：两种内存区域
+
+C++ 的变量根据声明方式存储在不同的内存区域：
+
+| 内存区域 | 存储什么 | 谁管理 | 速度 |
+|---------|---------|--------|------|
+| **栈** (Stack) | 局部变量、函数参数 | 自动（编译器） | 快 |
+| **堆** (Heap) | `new` 分配的内存 | 手动（程序员） | 较慢 |
+| **全局数据区** | 全局变量、静态变量 | 自动（程序启动/结束） | 中等 |
+
+```cpp
+#include <iostream>
+
+int globalVar = 10;  // 全局数据区
+
+void func(int param) {  // param 在栈上
+    int local = 20;     // 栈上
+    static int s = 0;   // 全局数据区
+    std::cout << "param=" << param << " local=" << local
+              << " s=" << s << " globalVar=" << globalVar << "\n";
+    // int* p = new int(30);  // 堆上（后续课程讲 new/delete）
+}
+
+int main() {
+    func(5);
+    return 0;
+}
+```
+
+运行结果：
+
+```text
+param=5 local=20 s=0 globalVar=10
+```
+
+> **为什么这很重要？** 栈的空间有限（通常几 MB），在栈上放太大的数据（比如超大数组）会导致栈溢出。堆的空间大得多（受物理内存限制），但需要手动管理。Java 的对象都在堆上，由 GC 回收；C++ 的局部变量在栈上，离开作用域自动销毁。这种差异是 C++ 性能高于 Java 的重要原因之一。
 
 ### 小练习
 
@@ -998,6 +1351,185 @@ int main() {
 73 41 92 15 58
 ```
 
+### 知识点补充：std::cout 输出格式化
+
+默认情况下，`std::cout` 输出浮点数时只显示 6 位有效数字。如果你需要更多精度，可以用 `<iomanip>` 头文件里的格式控制工具：
+
+```cpp
+#include <iostream>
+#include <iomanip>  // 格式控制头文件
+
+int main() {
+    double pi = 3.14159265358979323846;
+
+    // 默认输出：只显示 6 位
+    std::cout << "默认:     " << pi << "\n";
+
+    // 固定小数点 + 10 位精度
+    std::cout << std::fixed << std::setprecision(10);
+    std::cout << "10位精度: " << pi << "\n";
+
+    // 科学计数法
+    std::cout << std::scientific << std::setprecision(4);
+    std::cout << "科学计数: " << pi << "\n";
+
+    // 恢复默认
+    std::cout << std::defaultfloat << std::setprecision(6);
+    std::cout << "恢复默认: " << pi << "\n";
+
+    // 设置输出宽度（右对齐）
+    std::cout << std::setw(10) << "Hello" << "\n";
+    std::cout << std::setw(10) << "World" << "\n";
+
+    // 填充字符
+    std::cout << std::setw(10) << std::setfill('*') << 42 << "\n";
+
+    return 0;
+}
+```
+
+运行结果：
+
+```text
+默认:     3.14159
+10位精度: 3.1415926536
+科学计数: 3.1416e+00
+恢复默认: 3.14159
+     Hello
+     World
+********42
+```
+
+常用格式控制符一览：
+
+| 控制符 | 作用 | 需要头文件 |
+|--------|------|-----------|
+| `std::fixed` | 固定小数点表示 | `<iomanip>` |
+| `std::scientific` | 科学计数法 | `<iomanip>` |
+| `std::setprecision(n)` | 设置精度（小数位数） | `<iomanip>` |
+| `std::setw(n)` | 设置下一次输出的宽度 | `<iomanip>` |
+| `std::setfill(c)` | 设置填充字符 | `<iomanip>` |
+| `std::left` | 左对齐 | `<ios>` |
+| `std::right` | 右对齐（默认） | `<ios>` |
+| `std::hex` | 十六进制输出整数 | `<ios>` |
+| `std::dec` | 十进制输出（默认） | `<ios>` |
+
+> **Java 对比**：Java 用 `System.out.printf("%.10f", pi)` 做格式化，和 C 语言的 `printf` 一样。C++ 的 `std::cout` 用"流操纵符"方式，通过 `<<` 链式调用，虽然写法不同但功能等价。C++ 也支持 `printf`（通过 `<cstdio>`），但推荐用 `cout`。
+
+### 知识点补充：std::cin 输入处理
+
+前面的练习中用到了 `std::cin` 读取用户输入。这里正式介绍一下它的工作方式：
+
+```cpp
+#include <iostream>
+#include <string>
+
+int main() {
+    int age;
+    std::cout << "请输入年龄: ";
+    std::cin >> age;   // 读取整数
+
+    std::string name;
+    std::cout << "请输入姓名: ";
+    std::cin >> name;  // 读取字符串（遇空格停止）
+
+    std::cout << "你好, " << name << "! 你 " << age << " 岁了。\n";
+    return 0;
+}
+```
+
+运行示例（输入 `25` 和 `Alice`）：
+
+```text
+请输入年龄: 25
+请输入姓名: Alice
+你好, Alice! 你 25 岁了。
+```
+
+**cin 的常见用法**：
+
+| 操作 | 代码 | 说明 |
+|------|------|------|
+| 读取整数 | `std::cin >> n;` | 跳过空白，读取一个整数 |
+| 读取浮点数 | `std::cin >> d;` | 读取一个 double |
+| 读取单词 | `std::cin >> s;` | 遇空格/换行停止 |
+| 读取整行 | `std::getline(std::cin, s);` | 读到换行符为止（含空格） |
+| 检查输入是否失败 | `std::cin.fail()` | 输入类型不匹配时返回 true |
+| 清除错误状态 | `std::cin.clear();` | 重置 fail 标志 |
+| 丢弃缓冲区内容 | `std::cin.ignore();` | 跳过一个字符 |
+
+`std::cin >>` 和 `std::getline` 混用时容易踩坑：
+
+```cpp
+#include <iostream>
+#include <string>
+
+int main() {
+    int n;
+    std::string line;
+
+    std::cout << "输入数字: ";
+    std::cin >> n;  // 读取 42，但换行符 \n 留在缓冲区
+
+    std::cout << "输入一行文字: ";
+    // getline 会立即读到残留的 \n，导致看起来"跳过了输入"
+    std::getline(std::cin, line);  // 实际读到的是空字符串
+
+    std::cout << "n = " << n << ", line = [" << line << "]\n";
+    return 0;
+}
+```
+
+**解决方法**：在 `cin >>` 之后、`getline` 之前，加一句 `std::cin.ignore()`：
+
+```cpp
+std::cin >> n;
+std::cin.ignore();  // 丢掉残留的换行符
+std::getline(std::cin, line);  // 现在能正常读取了
+```
+
+### 知识点补充：constexpr 编译期常量
+
+C++11 引入了 `constexpr`，表示"这个值在编译期就能算出来"。它比 `const` 更强：`const` 只表示"运行时不可修改"，`constexpr` 要求"编译期就能确定"。
+
+```cpp
+#include <iostream>
+
+constexpr int SQUARE_SIZE = 5;       // 编译期常量
+constexpr double PI = 3.14159265;    // 编译期常量
+
+// constexpr 函数：如果参数也是编译期已知的，结果也在编译期算出
+constexpr int square(int x) {
+    return x * x;
+}
+
+int main() {
+    // 编译期就计算出 25，不占运行时间
+    constexpr int area = square(SQUARE_SIZE);
+
+    std::cout << "正方形边长: " << SQUARE_SIZE << "\n";
+    std::cout << "正方形面积: " << area << "\n";
+    std::cout << "圆周率: " << PI << "\n";
+    return 0;
+}
+```
+
+运行结果：
+
+```text
+正方形边长: 5
+正方形面积: 25
+圆周率: 3.14159265
+```
+
+| 关键字 | 含义 | 何时确定值 |
+|--------|------|-----------|
+| `const` | 只读，不可修改 | 运行时 |
+| `constexpr` | 编译期可计算的常量 | 编译时 |
+| `#define` | 宏替换（无类型检查） | 预处理阶段 |
+
+> **编程建议**：当你需要一个"永远不变的常量"时，优先用 `constexpr`，其次是 `const`，最后才考虑 `#define`。`#define` 没有类型检查，容易出 bug，现代 C++ 几乎不用它定义常量。
+
 ### 小练习
 
 写一个程序，模拟掷两个骰子（每个 1-6），计算它们的和，重复 10 次并输出每次结果。
@@ -1085,6 +1617,283 @@ int main() {
 年龄: 20
 成绩: 92.5
 ```
+
+### 知识点补充：std::string
+
+上面的结构体里用到了 `std::string`，这里正式介绍一下。`std::string` 是 C++ 标准库提供的字符串类型，定义在 `<string>` 头文件里。它比 C 语言的 `char[]` 安全得多——不需要手动管理内存，不用担心缓冲区溢出。
+
+```cpp
+#include <iostream>
+#include <string>
+
+int main() {
+    std::string s1 = "Hello";
+    std::string s2 = "World";
+
+    // 字符串拼接
+    std::string s3 = s1 + " " + s2;  // "Hello World"
+
+    // 字符串长度
+    std::cout << "长度: " << s3.length() << "\n";
+
+    // 访问单个字符
+    std::cout << "第一个字符: " << s3[0] << "\n";  // H
+    std::cout << "第三个字符: " << s3.at(2) << "\n"; // l（.at 会做边界检查）
+
+    // 比较
+    if (s1 == "Hello") {
+        std::cout << "s1 等于 Hello\n";
+    }
+
+    // 查找子串
+    size_t pos = s3.find("World");
+    if (pos != std::string::npos) {
+        std::cout << "找到 World，位置: " << pos << "\n";
+    }
+
+    // 截取子串
+    std::string sub = s3.substr(0, 5);  // "Hello"
+    std::cout << "子串: " << sub << "\n";
+
+    // 追加
+    s1 += "!!!";
+    std::cout << s1 << "\n";
+
+    return 0;
+}
+```
+
+运行结果：
+
+```text
+长度: 11
+第一个字符: H
+第三个字符: l
+s1 等于 Hello
+找到 World，位置: 6
+子串: Hello
+Hello!!!
+```
+
+常用方法一览：
+
+| 方法 | 说明 | 例子 |
+|------|------|------|
+| `.length()` 或 `.size()` | 字符串长度 | `s.length()` |
+| `[i]` | 访问第 i 个字符 | `s[0]` |
+| `.at(i)` | 访问第 i 个字符（带边界检查） | `s.at(0)` |
+| `+` | 拼接字符串 | `s1 + s2` |
+| `==`, `!=`, `<`, `>` | 比较 | `s1 == s2` |
+| `.find(sub)` | 查找子串，返回位置 | `s.find("ab")` |
+| `.substr(pos, len)` | 截取子串 | `s.substr(0, 3)` |
+| `.append(s)` | 末尾追加 | `s.append("xyz")` |
+| `.empty()` | 是否为空 | `s.empty()` |
+
+> **Java 对比**：`std::string` 和 Java 的 `String` 类似，都是不可变对象……不对，C++ 的 `std::string` 是**可变的**！你可以直接 `s[0] = 'h'` 修改单个字符，这在 Java 里做不到（Java 需要 `StringBuilder`）。另外，C++ 用 `==` 比较字符串内容，Java 用 `==` 比较的是引用地址（需要 `.equals()`），这是一个容易混淆的点。
+
+### 知识点补充：struct 的内存布局
+
+当你创建一个 struct 时，编译器会为它分配多大的内存？答案不是简单地把各成员大小加起来，因为还有**内存对齐**（alignment）的问题：
+
+```cpp
+#include <iostream>
+
+struct A {
+    char c;    // 1 字节
+    int i;     // 4 字节
+};
+
+struct B {
+    char c;    // 1 字节
+    // 编译器在这里填充 3 字节（padding）
+    int i;     // 4 字节
+};
+
+struct C {
+    int i;     // 4 字节
+    char c;    // 1 字节
+    // 编译器在这里填充 3 字节（padding）
+};
+
+int main() {
+    std::cout << "sizeof(A) = " << sizeof(A) << "\n";
+    std::cout << "sizeof(B) = " << sizeof(B) << "\n";
+    std::cout << "sizeof(C) = " << sizeof(C) << "\n";
+    return 0;
+}
+```
+
+运行结果：
+
+```text
+sizeof(A) = 8
+sizeof(B) = 8
+sizeof(C) = 8
+```
+
+`A` 和 `B` 的成员完全一样，但看起来 sizeof 应该是 1+4=5 字节。实际是 8 字节——因为编译器为了 CPU 访问效率，会在成员之间插入"填充字节"（padding），让 `int` 成员对齐到 4 字节边界。
+
+```
+struct B 的内存布局:
+[c][pad][pad][pad][i i i i]
+ 1B   3B padding    4B
+总计: 8 字节
+```
+
+> **编程建议**：日常编程不需要手动优化内存对齐，编译器会自动处理。但如果你在嵌入式开发或网络通信中需要精确控制 struct 大小，可以按"从大到小"排列成员来减少 padding。
+
+### 知识点补充：const 成员函数
+
+前面 struct 的成员函数后面都跟着 `const` 关键字：
+
+```cpp
+struct Point {
+    double x, y;
+
+    double distanceToOrigin() const {  // 这个 const 是什么意思？
+        return std::sqrt(x * x + y * y);
+    }
+};
+```
+
+`const` 写在函数参数列表的后面，表示"这个函数不会修改对象的任何成员变量"。它的作用是**承诺**：调用这个函数不会改变对象的状态。
+
+为什么需要它？看这个例子：
+
+```cpp
+void printPoint(const Point& p) {
+    // p 是 const 引用，表示"只读不写"
+    // 如果 distanceToOrigin() 不是 const 函数，这行会编译错误！
+    // 因为编译器不确定 distanceToOrigin() 会不会修改 p
+    std::cout << p.distanceToOrigin() << "\n";
+}
+```
+
+如果一个函数确实不修改成员变量，就给它加上 `const`。这样 `const` 对象和 `const` 引用都能调用它。
+
+> **Java 对比**：Java 没有 `const` 成员函数的概念。Java 的 `final` 参数表示"引用不可重新赋值"，但对象内容仍可修改。C++ 的 `const` 成员函数更严格——它保证不修改任何成员变量。
+
+### 知识点补充：std::vector 常用方法
+
+前面的代码中大量使用了 `std::vector`。这里汇总介绍它最常用的方法：
+
+```cpp
+#include <iostream>
+#include <vector>
+
+int main() {
+    std::vector<int> v;
+
+    // 添加元素
+    v.push_back(10);      // 尾部添加元素: [10]
+    v.push_back(20);      // [10, 20]
+    v.push_back(30);      // [10, 20, 30]
+
+    std::cout << "size: " << v.size() << "\n";      // 3
+    std::cout << "empty: " << v.empty() << "\n";     // 0 (false)
+
+    // 访问元素
+    std::cout << "v[0]: " << v[0] << "\n";            // 10（不检查边界）
+    std::cout << "v.at(1): " << v.at(1) << "\n";     // 20（检查边界，越界抛异常）
+    std::cout << "front: " << v.front() << "\n";     // 10
+    std::cout << "back: " << v.back() << "\n";        // 30
+
+    // 删除元素
+    v.pop_back();          // 删除末尾: [10, 20]
+    std::cout << "after pop: size=" << v.size() << "\n";  // 2
+
+    // 在指定位置插入
+    v.insert(v.begin() + 1, 15);  // 在位置 1 插入: [10, 15, 20]
+
+    // 删除指定位置
+    v.erase(v.begin());    // 删除第一个: [15, 20]
+
+    // 清空
+    v.clear();
+    std::cout << "after clear: empty=" << v.empty() << "\n";  // 1 (true)
+
+    // 初始化方式
+    std::vector<int> a = {1, 2, 3};         // 列表初始化
+    std::vector<int> b(5, 0);               // 5 个 0: [0,0,0,0,0]
+    std::vector<int> c(3);                  // 3 个默认值(0): [0,0,0]
+
+    return 0;
+}
+```
+
+运行结果：
+
+```text
+size: 3
+empty: 0
+v[0]: 10
+v.at(1): 20
+front: 10
+back: 30
+after pop: size=2
+after clear: empty=1
+```
+
+常用方法速查表：
+
+| 方法 | 说明 |
+|------|------|
+| `.push_back(x)` | 尾部添加元素 |
+| `.pop_back()` | 删除末尾元素 |
+| `.size()` | 元素个数 |
+| `.empty()` | 是否为空 |
+| `[i]` | 访问第 i 个元素（不检查边界） |
+| `.at(i)` | 访问第 i 个元素（检查边界） |
+| `.front()` | 第一个元素 |
+| `.back()` | 最后一个元素 |
+| `.clear()` | 清空所有元素 |
+| `.insert(pos, x)` | 在指定位置插入 |
+| `.erase(pos)` | 删除指定位置元素 |
+
+> **Java 对比**：`std::vector` 类似 Java 的 `ArrayList`，都是动态数组。`push_back` 对应 `add`，`size` 对应 `size`，`pop_back` 对应 `remove(size()-1)`。
+
+### 知识点补充：std::pair 简介
+
+练习中用到了 `std::pair<int, std::string>`，这里简单介绍一下。`std::pair` 是一个"装两个值的容器"，定义在 `<utility>` 头文件里：
+
+```cpp
+#include <iostream>
+#include <utility>     // std::pair
+#include <string>
+
+int main() {
+    // 创建 pair：两个值可以是不同类型
+    std::pair<int, std::string> p1 = {95, "Alice"};
+
+    // 访问：用 .first 和 .second
+    std::cout << "分数: " << p1.first << "\n";    // 95
+    std::cout << "姓名: " << p1.second << "\n";   // Alice
+
+    // 更简洁的创建方式：make_pair
+    auto p2 = std::make_pair(88, std::string("Bob"));
+    std::cout << p2.first << " " << p2.second << "\n";  // 88 Bob
+
+    // pair 常用于函数返回两个值
+    // 比如：返回 (查找结果, 是否找到)
+    auto result = std::make_pair(42, true);
+    if (result.second) {
+        std::cout << "找到值: " << result.first << "\n";
+    }
+
+    return 0;
+}
+```
+
+运行结果：
+
+```text
+分数: 95
+姓名: Alice
+88 Bob
+找到值: 42
+```
+
+> **Java 对比**：Java 没有内置的 pair 类型（Apache Commons 和 JavaFX 里有 `Pair`）。C++ 的 `std::pair` 是标准库的一部分，使用非常方便。当你只需要"两个值绑在一起"时，用 `pair` 比专门定义一个 struct 更轻量。
 
 ### 多个变量
 
@@ -1847,12 +2656,23 @@ int main() {
 
 | 知识点 | 你掌握的能力 |
 |--------|------------|
-| 枚举 | 用 enum class 定义类型安全的枚举 |
-| 自定义类型名 | 用 using 给类型起别名 |
-| 命名空间 | 用 namespace 隔离名字，避免冲突 |
-| 变量生命周期 | 理解局部、全局、静态变量的区别 |
-| 数据计算 | 用 sizeof、limits、cmath、random |
+| 枚举 | 用 enum class 定义类型安全的枚举，理解底层存储与 switch 配合 |
+| static_cast | 用 C++ 推荐的方式做类型转换 |
+| 自定义类型名 | 用 using 给类型起别名，用 auto 让编译器推导类型 |
+| 命名空间 | 用 namespace 隔离名字，理解 using 声明与指令的区别 |
+| 匿名命名空间 | 限制变量/函数只在当前文件可见 |
+| 变量生命周期 | 理解局部、全局、静态变量的区别，掌握作用域 :: 和 extern |
+| 栈与堆 | 理解 C++ 的两种内存区域及其管理方式 |
+| 数据计算 | 用 sizeof、limits、cmath、random 处理数值 |
+| cout 格式化 | 用 iomanip 控制输出精度、宽度、对齐 |
+| cin 输入 | 读取各种类型输入，处理 cin 与 getline 的混用问题 |
+| constexpr | 定义编译期常量，区分 const、constexpr 和 #define |
 | 自定义数据类型 | 用 struct 组合多个值成一个新类型 |
+| std::string | 字符串拼接、查找、截取、比较等常用操作 |
+| std::vector | 动态数组的增删改查，push_back/size/insert/erase 等 |
+| std::pair | 将两个值绑定在一起 |
+| const 成员函数 | 承诺不修改对象状态，支持 const 对象调用 |
+| 内存对齐 | 理解 struct 中 padding 的存在和影响 |
 
 **下一步建议**：
 
