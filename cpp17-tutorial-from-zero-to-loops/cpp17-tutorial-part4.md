@@ -33,13 +33,14 @@
 #include <iostream>
 
 int main() {
-    int x = 42;
+    int x = 42;     // 在栈上创建一个 int 变量，值为 42
 
     // & 是取地址运算符，获取变量 x 的内存地址
+    // 输出格式为 0x 开头的十六进制数
     std::cout << "x 的值: " << x << "\n";
     std::cout << "x 的地址: " << &x << "\n";
 
-    double y = 3.14;
+    double y = 3.14;  // 不同类型的变量也存放在栈上
     std::cout << "y 的值: " << y << "\n";
     std::cout << "y 的地址: " << &y << "\n";
 
@@ -84,23 +85,39 @@ for (const auto& name : names) {  // 这里的 & 是"引用"
 
 ```cpp
 #include <iostream>
-#include <iomanip>
+#include <iomanip>   // std::hex, std::showbase, std::dec
 
 int main() {
     int a = 10;
     int b = 20;
     int c = 30;
 
-    // 打印地址（十六进制，默认）
+    // 打印地址（默认十六进制，带 0x 前缀）
     std::cout << "a 的地址: " << &a << "\n";
     std::cout << "b 的地址: " << &b << "\n";
     std::cout << "c 的地址: " << &c << "\n";
 
+    // 用 std::hex 和 std::showbase 显式指定十六进制输出
+    // std::hex       —— 让 cout 以十六进制输出整数
+    // std::showbase  —— 显示 0x 前缀
+    // std::dec       —— 恢复十进制输出
+    std::cout << "\n用 hex 格式输出地址：\n";
+    std::cout << std::hex << std::showbase;
+    std::cout << "a 的地址: " << reinterpret_cast<std::uintptr_t>(&a) << "\n";
+    std::cout << "b 的地址: " << reinterpret_cast<std::uintptr_t>(&b) << "\n";
+    std::cout << std::dec << std::noshowbase;  // 恢复默认格式
+
     // 观察相邻变量的地址差
+    // 把地址转成 char* 后做减法，结果就是字节数
+    // reinterpret_cast<char*> 将 int* 重解释为 char*
+    // 这样指针减法的结果是"字节数"而非"元素个数"
     std::cout << "\n地址差（字节）：\n";
-    // 把地址转成整数来计算差值
-    std::cout << "a 到 b: " << (char*)&b - (char*)&a << " 字节\n";
-    std::cout << "b 到 c: " << (char*)&c - (char*)&b << " 字节\n";
+    std::cout << "a 到 b: "
+              << reinterpret_cast<char*>(&b) - reinterpret_cast<char*>(&a)
+              << " 字节\n";
+    std::cout << "b 到 c: "
+              << reinterpret_cast<char*>(&c) - reinterpret_cast<char*>(&b)
+              << " 字节\n";
 
     return 0;
 }
@@ -113,6 +130,10 @@ a 的地址: 0x7ffd2a3f1c4c
 b 的地址: 0x7ffd2a3f1c48
 c 的地址: 0x7ffd2a3f1c44
 
+用 hex 格式输出地址：
+a 的地址: 0x7ffd2a3f1c4c
+b 的地址: 0x7ffd2a3f1c48
+
 地址差（字节）：
 a 到 b: -4 字节
 b 到 c: -4 字节
@@ -120,7 +141,21 @@ b 到 c: -4 字节
 
 每个 `int` 占 4 字节，所以相邻 `int` 变量的地址相差 4。地址递减是因为栈是"向下生长"的——后声明的变量地址更小。
 
-> **知识点补充： reinterpret_cast**。上面代码中 `(char*)&b` 是一种强制类型转换，把 `int*` 转成 `char*`，这样指针减法的结果就是字节数而不是元素数。C++ 推荐的写法是 `reinterpret_cast<char*>(&b)`，但这里用 C 风格转换更简洁。`reinterpret_cast` 是四种转换操作符之一（第二部分讲过 `static_cast`），用于位级别的类型重新解释。
+> **知识点补充：reinterpret_cast**。上面代码中用到了 `reinterpret_cast<char*>(&a)`，它把 `int*` 转成 `char*`，这样指针减法的结果就是字节数而不是元素数。`reinterpret_cast` 是四种转换操作符中最"暴力"的一种——它直接重新解释地址的位模式，不做任何运行时检查。第二部分讲过 `static_cast`，四种转换操作符回顾如下：
+>
+> | 操作符 | 用途 | 安全性 |
+> |--------|------|--------|
+> | `static_cast` | 基本类型之间转换（int→double 等） | 高，编译期检查 |
+> | `dynamic_cast` | 安全的向下转型（面向对象部分讲） | 高，运行时检查 |
+> | `const_cast` | 去掉或添加 const 属性 | 中，需谨慎使用 |
+> | `reinterpret_cast` | 位级别的类型重新解释 | 低，程序员自己负责 |
+>
+> **知识点补充：std::hex / std::showbase / std::dec**。这三个来自 `<iomanip>` 头文件（第二部分已介绍），是 `std::cout` 的格式控制符：
+> - `std::hex` —— 后续整数以十六进制输出
+> - `std::dec` —— 后续整数以十进制输出（默认）
+> - `std::showbase` —— 显示进制前缀（十六进制加 `0x`）
+> - `std::noshowbase` —— 隐藏进制前缀
+> - `std::uintptr_t` —— 来自 `<cstdint>`，是足以存放指针的无符号整数类型，常用于将地址转为整数做运算
 
 ### 复习：栈与堆
 
@@ -163,9 +198,16 @@ int main() {
     double d = 3.14;
     char c = 'A';
 
+    // 打印值、地址和类型大小
+    // sizeof 是运算符，返回类型或变量占用的字节数
     std::cout << "int i: 值=" << i << " 地址=" << &i << " 大小=" << sizeof(i) << "\n";
     std::cout << "double d: 值=" << d << " 地址=" << &d << " 大小=" << sizeof(d) << "\n";
-    std::cout << "char c: 值=" << c << " 地址=" << (void*)&c << " 大小=" << sizeof(c) << "\n";
+
+    // char* 被 cout 当作 C 风格字符串输出
+    // 用 (void*) 或 static_cast<const void*> 转换后才能打印地址
+    std::cout << "char c: 值=" << c << " 地址="
+              << static_cast<const void*>(&c)
+              << " 大小=" << sizeof(c) << "\n";
 
     return 0;
 }
@@ -195,11 +237,17 @@ char c: 值=A 地址=0x7ffd3a2b1c4b 大小=1
 #include <iostream>
 
 int main() {
-    int x = 42;
+    int x = 42;       // 栈上创建变量 x，值为 42
 
-    // 声明一个指向 int 的指针变量 p，把 x 的地址赋给它
-    int* p = &x;  // p 存储了 x 的地址
+    // 声明一个指向 int 的指针变量 p
+    // 把 x 的地址赋给 p，p 就"指向"了 x
+    int* p = &x;      // p 存储了 x 的地址
 
+    // 打印对比
+    // x 的值是 42
+    // &x 是 x 的地址
+    // p 的值就是 &x（它们指向同一块内存）
+    // &p 是 p 这个指针变量自己的地址
     std::cout << "x 的值: " << x << "\n";
     std::cout << "x 的地址: " << &x << "\n";
     std::cout << "p 的值（就是 x 的地址）: " << p << "\n";
@@ -235,13 +283,19 @@ int main() {
     int x = 42;
     double y = 3.14;
 
-    int* pi = &x;        // int* 指向 int
-    double* pd = &y;     // double* 指向 double
+    // 指针有类型约束：
+    // int* 只能指向 int 变量
+    // double* 只能指向 double 变量
+    int* pi = &x;        // pi 是 int* 类型，指向 x
+    double* pd = &y;     // pd 是 double* 类型，指向 y
 
+    // 所有指针本身占用的内存大小相同（64 位系统上都是 8 字节）
+    // 因为指针存的是地址，地址的大小和 CPU 位数有关，和指向的类型无关
     std::cout << "sizeof(int*) = " << sizeof(pi) << "\n";    // 8
     std::cout << "sizeof(double*) = " << sizeof(pd) << "\n"; // 8
 
     // pi = &y;  // 编译错误！int* 不能指向 double
+    // 类型错误时编译器会直接报错，这是类型安全的保障
 
     return 0;
 }
@@ -269,10 +323,12 @@ int main() {
     int x = 42;
     int* p = &x;  // p 指向 x
 
-    // 解引用：通过 p 读取 x 的值
+    // 解引用 *p：通过指针读取它指向的变量的值
+    // *p 和 x 访问的是同一块内存
     std::cout << "*p = " << *p << "\n";  // 42（和 x 的值一样）
 
     // 通过解引用修改 x 的值
+    // 写 *p = 100 等价于写 x = 100
     *p = 100;  // 把 x 改成 100
     std::cout << "修改后 x = " << x << "\n";  // 100
 
@@ -319,27 +375,31 @@ int y = *p;    // * 解引用：从地址得到值
 #include <iostream>
 
 int main() {
-    // 在栈上创建变量（自动销毁）
+    // ===== 栈上创建变量 =====
+    // 栈变量在离开作用域时自动销毁，无需手动管理
     int stackVar = 10;
 
-    // 在堆上创建变量（手动管理）
-    int* heapVar = new int;  // new 分配一个 int 大小的内存，返回地址
+    // ===== 堆上创建变量 =====
+    // new 运算符在堆上分配内存，返回指向该内存的指针
+    // new int 分配一个 int 大小的内存（4 字节），但未初始化
+    int* heapVar = new int;
     *heapVar = 20;           // 通过指针给那块内存赋值
 
     std::cout << "栈变量: " << stackVar << "\n";
     std::cout << "堆变量: " << *heapVar << "\n";
 
     // 用完堆内存后必须释放，否则就是内存泄漏
+    // delete 运算符释放 new 分配的内存
     delete heapVar;  // 释放内存
-    // heapVar 此刻变成悬空指针（后面会讲）
+    // heapVar 此刻变成悬空指针（地址还在，但内存已归还）
 
-    // new 时直接初始化
+    // new 时直接初始化（在类型后加括号）
     int* p = new int(42);  // 分配并初始化为 42
     std::cout << "p 指向的值: " << *p << "\n";
-    delete p;
+    delete p;  // 释放
 
     // 在堆上创建 double
-    double* d = new double(3.14159);
+    double* d = new double(3.14159);  // 分配并初始化
     std::cout << "d 指向的值: " << *d << "\n";
     delete d;
 
@@ -368,6 +428,18 @@ d 指向的值: 3.14159
 | 安全性 | 高（自动管理） | 低（忘记 delete 就泄漏） |
 
 > **Java 对比**：Java 的所有对象都在堆上创建（`new`），由 GC 自动回收。C++ 的 `new` 和 Java 的 `new` 类似，但 C++ 没有垃圾回收——你必须自己 `delete`。这是 C++ 比 Java 难的地方，也是 C++ 性能更高的原因之一（没有 GC 暂停）。
+>
+> **知识点补充：new 运算符详解**。`new` 是 C++ 的动态内存分配运算符，语法有两种形式：
+> - `new 类型` —— 分配内存但不初始化（值不确定）
+> - `new 类型(初始值)` —— 分配内存并初始化为指定值
+>
+> `new` 返回指向分配内存的指针。如果分配失败（内存不足），默认会抛出 `std::bad_alloc` 异常。
+>
+> `delete` 是 `new` 的逆运算，释放 `new` 分配的内存。语法：
+> - `delete 指针` —— 释放单个对象
+> - `delete[] 指针` —— 释放数组（用 `new[]` 分配的数组）
+>
+> **知识点补充：C 语言对比**。C 语言用 `malloc`/`free` 管理堆内存，需要手动计算字节数并做类型转换：`int* p = (int*)malloc(sizeof(int));`。C++ 的 `new`/`delete` 更简洁，而且会自动调用构造/析构函数（面向对象部分讲）。
 
 > **编程建议**：现代 C++ 推荐用智能指针（`std::unique_ptr`、`std::shared_ptr`）代替裸 `new`/`delete`。但理解裸指针是使用智能指针的前提，所以这部分先用原始方式学习，排错避坑一节会预告智能指针。
 
@@ -427,12 +499,14 @@ double 值: 2.718 地址: 0x55a3e8d7ee90
 int main() {
     int arr[5] = {10, 20, 30, 40, 50};
 
-    // arr 自动"退化"为指向首元素的指针
+    // arr 自动"退化"为首元素指针
+    // 在大多数表达式中，数组名会隐式转换为 &arr[0]
     std::cout << "arr       = " << arr << "\n";       // 首元素地址
-    std::cout << "&arr[0]   = " << &arr[0] << "\n";   // 和上面一样
+    std::cout << "&arr[0]   = " << &arr[0] << "\n";   // 和上面完全一样
     std::cout << "*arr      = " << *arr << "\n";      // 首元素的值：10
 
-    // 可以用指针的方式访问数组
+    // 下标访问和指针算术是等价的
+    // arr[i] 编译器会翻译成 *(arr + i)
     std::cout << "arr[2]    = " << arr[2] << "\n";     // 30
     std::cout << "*(arr+2)  = " << *(arr + 2) << "\n"; // 30，和上面一样
 
@@ -463,22 +537,24 @@ arr[2]    = 30
 
 int main() {
     int arr[5] = {10, 20, 30, 40, 50};
-    int* p = arr;  // p 指向 arr[0]
+    int* p = arr;  // p 指向 arr[0]，等价于 p = &arr[0]
 
-    // p + 1 跳过 1 个 int（4 字节），指向 arr[1]
-    std::cout << "p     -> " << *p << "\n";       // 10
-    std::cout << "p + 1 -> " << *(p + 1) << "\n"; // 20
-    std::cout << "p + 2 -> " << *(p + 2) << "\n"; // 30
-    std::cout << "p + 4 -> " << *(p + 4) << "\n"; // 50
+    // 指针算术：p + n 不是地址加 n 字节
+    // 而是跳过 n 个元素（地址增加 n * sizeof(int)）
+    // 编译器根据指针类型自动计算跳转的字节数
+    std::cout << "p     -> " << *p << "\n";       // 10（第一个元素）
+    std::cout << "p + 1 -> " << *(p + 1) << "\n"; // 20（跳过 4 字节）
+    std::cout << "p + 2 -> " << *(p + 2) << "\n"; // 30（跳过 8 字节）
+    std::cout << "p + 4 -> " << *(p + 4) << "\n"; // 50（跳过 16 字节）
 
-    // 指针自增
+    // p++ 让指针移动到下一个元素（地址增加 4 字节）
     p++;  // p 现在指向 arr[1]
     std::cout << "p++ 后: " << *p << "\n";  // 20
 
     p++;  // p 现在指向 arr[2]
     std::cout << "p++ 后: " << *p << "\n";  // 30
 
-    // 指针自减
+    // p-- 让指针回退到上一个元素
     p--;  // p 回到 arr[1]
     std::cout << "p-- 后: " << *p << "\n";  // 20
 
@@ -519,7 +595,7 @@ p-- 后: 20
 
 int main() {
     int arr[5] = {10, 20, 30, 40, 50};
-    int len = sizeof(arr) / sizeof(arr[0]);
+    int len = sizeof(arr) / sizeof(arr[0]);  // 数组长度 = 总字节数 / 元素字节数
 
     // 方式一：用下标遍历（第三部分学过）
     std::cout << "下标遍历: ";
@@ -529,13 +605,15 @@ int main() {
     std::cout << "\n";
 
     // 方式二：用指针算术遍历
+    // 从 arr（首元素地址）开始，逐个 ++p，直到到达 arr + len（末尾之后）
     std::cout << "指针遍历: ";
     for (int* p = arr; p != arr + len; ++p) {
-        std::cout << *p << " ";
+        std::cout << *p << " ";  // 解引用 p 获取当前元素值
     }
     std::cout << "\n";
 
     // 方式三：用指针算术 + 下标
+    // p[i] 等价于 *(p + i)，两者完全相同
     std::cout << "混合遍历: ";
     int* p = arr;
     for (int i = 0; i < len; ++i) {
@@ -753,22 +831,25 @@ int main() {
 
 int main() {
     // 声明一个不指向任何东西的指针
+    // nullptr 是 C++11 引入的空指针常量，类型为 nullptr_t
+    // 替代了 C 语言的 NULL 和 0
     int* p = nullptr;  // 空指针
 
-    // 检查指针是否为空
+    // 解引用前必须检查是否为空，否则会导致程序崩溃
     if (p == nullptr) {
         std::cout << "p 是空指针，不能解引用\n";
     }
 
     // 给 p 一个有效的地址
     int x = 42;
-    p = &x;
+    p = &x;  // 现在 p 指向 x
 
+    // 解引用前检查
     if (p != nullptr) {
         std::cout << "p 指向: " << *p << "\n";  // 42
     }
 
-    // 清空指针
+    // 清空指针——重新指向 nullptr
     p = nullptr;
     std::cout << "p 又变成空指针了\n";
 
@@ -929,11 +1010,16 @@ safe 指向: 42
 #include <iostream>
 
 int main() {
+    // 在堆上分配内存
     int* p = new int(42);
     std::cout << "分配: " << *p << "\n";
 
-    delete p;     // 释放内存
-    p = nullptr;  // 置空，防止后续误用
+    // 释放内存
+    // delete 后，p 仍保存着原来的地址（值不变），但那块内存已归还给系统
+    delete p;
+
+    // 立即置空——防止后续误用这个已失效的地址（悬空指针）
+    p = nullptr;
 
     // delete 之后再检查
     if (p != nullptr) {
@@ -942,8 +1028,9 @@ int main() {
         std::cout << "p 已释放并置空，跳过访问\n";
     }
 
-    // 对 nullptr 做 delete 是安全的（什么都不做）
-    delete p;  // 安全！C++ 规定 delete nullptr 是空操作
+    // 对 nullptr 做 delete 是安全的（C++ 规定它是空操作）
+    // 所以即使重复 delete 也不会崩溃
+    delete p;  // 安全！相当于什么都没做
 
     return 0;
 }
@@ -1131,22 +1218,25 @@ int main() {
     int x = 42;
     int y = 100;
 
-    // 形式一：const int* —— 不能通过指针改值，但能改指向
+    // ===== 形式一：const int* —— 指向常量的指针 =====
+    // const 在 * 左边：不能通过指针修改值，但可以改变指针的指向
     const int* p1 = &x;
-    // *p1 = 50;  // 错误：不能通过 p1 修改值
-    p1 = &y;      // 合法：可以改指向
+    // *p1 = 50;  // 编译错误！不能通过 p1 修改值
+    p1 = &y;      // 合法：可以改变 p1 指向另一个变量
     std::cout << "p1 -> " << *p1 << "\n";  // 100
 
-    // 形式二：int* const —— 不能改指向，但能通过指针改值
+    // ===== 形式二：int* const —— 常量指针 =====
+    // const 在 * 右边：不能改变指针的指向，但可以通过指针修改值
     int* const p2 = &x;
-    *p2 = 50;      // 合法：可以通过 p2 修改 x
-    // p2 = &y;   // 错误：不能改指向
+    *p2 = 50;      // 合法：可以通过 p2 修改 x 的值
+    // p2 = &y;   // 编译错误！不能改变 p2 的指向
     std::cout << "x = " << x << "\n";  // 50
 
-    // 形式三：const int* const —— 都不能改
+    // ===== 形式三：const int* const —— 两者都不可改 =====
+    // 既不能改值，也不能改指向，最严格的限制
     const int* const p3 = &x;
-    // *p3 = 10;  // 错误
-    // p3 = &y;   // 错误
+    // *p3 = 10;  // 编译错误
+    // p3 = &y;   // 编译错误
     std::cout << "p3 -> " << *p3 << "\n";  // 50
 
     return 0;
@@ -1384,20 +1474,23 @@ int main() {
 int main() {
     int n;
     std::cout << "输入学生人数: ";
-    std::cin >> n;
+    std::cin >> n;   // std::cin 从标准输入读取数据
 
     if (n <= 0) {
         std::cout << "人数必须大于 0\n";
-        return 1;
+        return 1;    // 返回非零表示程序异常退出
     }
 
     // 在堆上动态创建数组（运行时才知道大小）
+    // new int[n] 分配 n 个 int 的连续内存，返回首元素指针
+    // 注意：C 风格数组 int arr[n] 在标准 C++ 中不合法（n 不是编译期常量）
+    //       但 new int[n] 是合法的，因为 n 在运行时确定
     int* scores = new int[n];
 
-    // 接收输入
+    // 接收输入填充数组
     for (int i = 0; i < n; ++i) {
         std::cout << "学生 " << i + 1 << " 的成绩: ";
-        std::cin >> scores[i];
+        std::cin >> scores[i];   // 通过指针下标访问
     }
 
     // 计算总分和平均分
@@ -1405,6 +1498,8 @@ int main() {
     for (int i = 0; i < n; ++i) {
         sum += scores[i];
     }
+    // static_cast<double> 把整数除法转成浮点除法
+    // 不转换的话 255/3 = 85（整数除法，截断小数）
     double avg = static_cast<double>(sum) / n;
 
     // 输出结果
@@ -1415,9 +1510,11 @@ int main() {
     std::cout << "总分: " << sum << "\n";
     std::cout << "平均分: " << avg << "\n";
 
-    // 释放堆内存
-    delete[] scores;     // 注意：数组用 delete[]，不是 delete
-    scores = nullptr;   // 置空
+    // 释放堆数组
+    // 注意：new[] 分配的数组必须用 delete[] 释放（带方括号）
+    // 如果用 delete（不带方括号）会导致未定义行为
+    delete[] scores;
+    scores = nullptr;   // 置空，防止悬空指针
 
     return 0;
 }
@@ -1453,31 +1550,39 @@ C 风格字符串本质是 `char` 数组，以 `\0` 结尾。用指针遍历和�
 ```cpp
 #include <iostream>
 
-// 用指针计算字符串长度（类似 strlen）
+// 用指针计算字符串长度（类似 C 库函数 strlen）
+// 参数用 const char* 表示只读不修改
 int myStrlen(const char* s) {
-    if (s == nullptr) return 0;
+    if (s == nullptr) return 0;  // 空指针检查
     int len = 0;
-    while (*s != '\0') {  // 遇到结尾符就停
+    // C 风格字符串以 '\0'（空字符）结尾
+    // 遍历直到遇到 '\0' 为止
+    while (*s != '\0') {
         ++len;
-        ++s;  // 移动到下一个字符
+        ++s;   // 移动到下一个字符
     }
     return len;
 }
 
-// 用指针复制字符串
+// 用指针复制字符串（类似 C 库函数 strcpy）
+// dest 是目标缓冲区，src 是源字符串
 void myStrcpy(char* dest, const char* src) {
     if (dest == nullptr || src == nullptr) return;
+    // 逐字符复制，直到遇到 '\0'
     while (*src != '\0') {
-        *dest = *src;  // 复制一个字符
+        *dest = *src;   // 复制一个字符
         ++dest;
         ++src;
     }
-    *dest = '\0';  // 别忘了结尾符
+    *dest = '\0';  // 别忘了在末尾添加结束符
 }
 
 int main() {
     const char* original = "Hello, C++!";
-    char buffer[50];  // 足够大的缓冲区
+    // C 风格字符串：const char* 指向一个以 '\0' 结尾的 char 数组
+    // 编译器自动在字符串字面量末尾添加 '\0'
+
+    char buffer[50];  // 足够大的缓冲区，用于存放复制的字符串
 
     // 计算长度
     int len = myStrlen(original);
@@ -1486,11 +1591,12 @@ int main() {
     // 复制
     myStrcpy(buffer, original);
     std::cout << "复制后: " << buffer << "\n";
+    // cout 遇到 char* 会自动当字符串输出，直到 '\0' 停止
 
     // 用指针逐字符遍历
     std::cout << "逐字符: ";
     for (const char* p = buffer; *p != '\0'; ++p) {
-        std::cout << *p;
+        std::cout << *p;   // 逐个字符输出
     }
     std::cout << "\n";
 
@@ -1672,15 +1778,24 @@ void process(std::vector<int>& v) {
 #include <memory>  // 智能指针头文件
 
 int main() {
-    // unique_ptr：独占所有权，离开作用域自动 delete
+    // ===== unique_ptr：独占所有权 =====
+    // std::make_unique<T>(args...) 在堆上创建 T 对象
+    // 返回 unique_ptr<T>，离开作用域时自动 delete
+    // 不能被复制，只能被移动（保证唯一所有权）
     std::unique_ptr<int> p1 = std::make_unique<int>(42);
     std::cout << "p1 = " << *p1 << "\n";  // 42
     // 不需要 delete！离开作用域自动释放
 
-    // shared_ptr：共享所有权，引用计数归零时自动 delete
+    // ===== shared_ptr：共享所有权 =====
+    // std::make_shared<T>(args...) 在堆上创建 T 对象
+    // 返回 shared_ptr<T>，内部有引用计数
+    // 多个 shared_ptr 可以指向同一块内存
+    // 最后一个 shared_ptr 销毁时才自动 delete
     std::shared_ptr<int> p2 = std::make_shared<int>(100);
-    std::shared_ptr<int> p3 = p2;  // 可以共享
+    std::shared_ptr<int> p3 = p2;  // 可以共享，引用计数 +1
     std::cout << "p2 = " << *p2 << ", p3 = " << *p3 << "\n";
+
+    // use_count() 返回当前有多少个 shared_ptr 共享这块内存
     std::cout << "引用计数: " << p2.use_count() << "\n";  // 2
 
     // 都不需要手动 delete！
@@ -1699,6 +1814,23 @@ p2 = 100, p3 = 100
 智能指针是现代 C++ 内存管理的核心工具。下半部分会深入学习。目前的建议是：理解裸指针原理，实际工程中优先用智能指针。
 
 > **Java 对比**：`std::shared_ptr` 类似 Java 的普通引用——只要有引用指向对象，对象就不会被回收。`std::unique_ptr` 类似 Java 中你"独占"的对象引用。区别是 C++ 的智能指针在编译期就确定所有权，比 Java 的运行时 GC 更高效。
+>
+> **知识点补充：std::make_unique / std::make_shared**。这两个是 C++ 推荐的智能指针创建方式（C++14/11）：
+> - `std::make_unique<T>(args...)` —— 在堆上创建 T 对象，返回 `unique_ptr<T>`
+> - `std::make_shared<T>(args...)` —— 在堆上创建 T 对象，返回 `shared_ptr<T>`
+>
+> 为什么推荐用 `make_unique` 而不是 `unique_ptr<int> p(new int(42))`？因为前者更安全（避免内存泄漏的边缘情况）、更高效（一次内存分配）。`make_shared` 更优——它把对象和控制块（引用计数）放在同一块内存里，只需一次分配。
+>
+> **智能指针常用方法**：
+>
+> | 方法 | 说明 | 适用类型 |
+> |------|------|---------|
+> | `*p` | 解引用，获取指向的对象 | 两者 |
+> | `p->member` | 访问对象的成员 | 两者 |
+> | `p.get()` | 获取裸指针（不增加引用计数） | 两者 |
+> | `p.reset()` | 释放当前对象（可能 delete），置空 | 两者 |
+> | `p.use_count()` | 返回引用计数 | shared_ptr |
+> | `p.unique()` | 是否独占（引用计数 == 1） | shared_ptr |
 
 ---
 
