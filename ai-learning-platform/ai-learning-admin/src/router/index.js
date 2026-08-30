@@ -14,6 +14,9 @@ const routes = [
       // 教师：题库管理、组卷考试
       { path: 'teacher/question', name: 'question', component: () => import('../views/teacher/QuestionBankView.vue') },
       { path: 'teacher/exam', name: 'exam', component: () => import('../views/teacher/ExamManageView.vue') },
+      // 教师：AI 出题、AI 批改
+      { path: 'teacher/ai-generate', name: 'ai-generate', component: () => import('../views/teacher/AiGenerateView.vue') },
+      { path: 'teacher/ai-grade', name: 'ai-grade', component: () => import('../views/teacher/AiGradeView.vue') },
       // 管理员：课程审核、课程管理
       { path: 'admin/course-review', name: 'course-review', component: () => import('../views/admin/CourseReviewView.vue') },
       { path: 'admin/course', name: 'admin-course', component: () => import('../views/admin/CourseManageAdminView.vue') }

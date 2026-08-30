@@ -18,7 +18,8 @@ const teacherMenus = [
   { key: 'course', label: '课程管理', icon: BookOutlined },
   { key: 'question', label: '题库管理', icon: DatabaseOutlined },
   { key: 'exam', label: '组卷考试', icon: FormOutlined },
-  { key: 'ai-tools', label: 'AI 出题/批改', icon: RobotOutlined },
+  { key: 'ai-generate', label: 'AI 智能出题', icon: RobotOutlined },
+  { key: 'ai-grade', label: 'AI 智能批改', icon: RobotOutlined },
   { key: 'learning-stats', label: '学情分析', icon: BarChartOutlined }
 ]
 const adminMenus = [
@@ -37,7 +38,7 @@ const menus = computed(() => (userStore.isAdmin ? adminMenus : teacherMenus))
 const roleText = computed(() => (userStore.isAdmin ? '管理员' : '教师'))
 
 // 菜单点击跳转（未开发的模块给出提示）
-const developedRoutes = ['Dashboard', 'course', 'course-review', 'admin-course', 'question', 'exam']
+const developedRoutes = ['Dashboard', 'course', 'course-review', 'admin-course', 'question', 'exam', 'ai-generate', 'ai-grade']
 function handleMenuClick({ key }) {
   if (developedRoutes.includes(key)) {
     router.push({ name: key })

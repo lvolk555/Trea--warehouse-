@@ -17,7 +17,8 @@ const menus = [
   { key: 'Practice', label: '章节练习' },
   { key: 'ExamList', label: '在线考试' },
   { key: 'ErrorBook', label: '错题本' },
-  { key: 'Scores', label: '我的成绩' }
+  { key: 'Scores', label: '我的成绩' },
+  { key: 'AiChat', label: 'AI 答疑' }
 ]
 
 const selectedKey = computed(() => {

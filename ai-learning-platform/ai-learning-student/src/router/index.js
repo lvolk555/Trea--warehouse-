@@ -20,7 +20,9 @@ const routes = [
       { path: 'exam', name: 'ExamList', component: () => import('../views/exam/ExamListView.vue') },
       { path: 'exam/:examId', name: 'ExamTake', component: () => import('../views/exam/ExamTakeView.vue') },
       { path: 'exam-result/:recordId', name: 'ExamResult', component: () => import('../views/exam/ExamResultView.vue') },
-      { path: 'scores', name: 'Scores', component: () => import('../views/exam/ScoreListView.vue') }
+      { path: 'scores', name: 'Scores', component: () => import('../views/exam/ScoreListView.vue') },
+      // AI 答疑
+      { path: 'ai-chat', name: 'AiChat', component: () => import('../views/ai/AiChatView.vue') }
     ]
   }
 ]
