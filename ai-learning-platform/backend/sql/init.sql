@@ -329,14 +329,14 @@ INSERT INTO `chapter` (`id`, `course_id`, `title`, `sort_order`) VALUES
 (2, 1, '第二章 面向对象核心', 2),
 (3, 2, '第一章 Python 与数据处理', 1);
 
--- 视频
+-- 视频（使用公开可播放的示例视频，便于本地演示）
 INSERT INTO `video` (`id`, `chapter_id`, `title`, `url`, `duration`, `sort_order`) VALUES
-(1, 1, '1.1 开发环境搭建', 'https://example.com/video/java-1-1.mp4', 720, 1),
-(2, 1, '1.2 变量与数据类型', 'https://example.com/video/java-1-2.mp4', 900, 2),
-(3, 2, '2.1 类与对象', 'https://example.com/video/java-2-1.mp4', 1080, 1),
-(4, 2, '2.2 封装与访问控制', 'https://example.com/video/java-2-2.mp4', 840, 2),
-(5, 2, '2.3 继承与多态', 'https://example.com/video/java-2-3.mp4', 1200, 3),
-(6, 3, '1.1 NumPy 数组基础', 'https://example.com/video/py-1-1.mp4', 960, 1);
+(1, 1, '1.1 开发环境搭建', 'https://www.w3schools.com/html/mov_bbb.mp4', 10, 1),
+(2, 1, '1.2 变量与数据类型', 'https://www.w3schools.com/html/movie.mp4', 12, 2),
+(3, 2, '2.1 类与对象', 'https://www.w3schools.com/html/mov_bbb.mp4', 10, 1),
+(4, 2, '2.2 封装与访问控制', 'https://www.w3schools.com/html/movie.mp4', 12, 2),
+(5, 2, '2.3 继承与多态', 'https://www.w3schools.com/html/mov_bbb.mp4', 10, 3),
+(6, 3, '1.1 NumPy 数组基础', 'https://www.w3schools.com/html/movie.mp4', 12, 1);
 
 -- 选课
 INSERT INTO `course_enrollment` (`student_id`, `course_id`, `progress`) VALUES

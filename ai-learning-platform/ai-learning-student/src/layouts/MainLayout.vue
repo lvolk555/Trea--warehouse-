@@ -1,17 +1,30 @@
 <script setup>
-import { useRouter } from 'vue-router'
+import { computed } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useMessage, useDialog } from 'naive-ui'
 import { useUserStore } from '../stores/user'
 
 const router = useRouter()
+const route = useRoute()
 const message = useMessage()
 const dialog = useDialog()
 const userStore = useUserStore()
 
 // 学生端顶部导航（阶段二起逐步补充菜单项）
 const menus = [
-  { key: 'home', label: '首页' }
+  { key: 'Square', label: '课程广场' },
+  { key: 'MyCourses', label: '我的课程' }
 ]
+
+const selectedKey = computed(() => {
+  const name = route.name
+  if (name === 'CourseDetail' || name === 'Study') return 'Square'
+  return name
+})
+
+function handleMenuClick(key) {
+  router.push({ name: key })
+}
 
 function handleLogout() {
   dialog.warning({
@@ -37,7 +50,7 @@ function handleLogout() {
           <div class="logo">AI</div>
           <span>AI 辅助在线学习平台</span>
         </div>
-        <n-menu mode="horizontal" :value="$route.name" :options="menus.map(m => ({ key: m.key, label: m.label }))" style="flex: 1" />
+        <n-menu mode="horizontal" :value="selectedKey" :options="menus.map(m => ({ key: m.key, label: m.label }))" style="flex: 1" @update:value="handleMenuClick" />
         <div class="user-area">
           <n-tag type="warning" size="small" round>积分 --</n-tag>
           <n-dropdown :options="[{ key: 'logout', label: '退出登录' }]" @select="handleLogout">

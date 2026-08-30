@@ -12,9 +12,9 @@ import { useUserStore } from '../stores/user'
 const router = useRouter()
 const userStore = useUserStore()
 
-// 侧边菜单：按角色动态渲染（教师菜单 / 管理员菜单）
+// 侧边菜单：按角色动态渲染（教师菜单 / 管理员菜单），key 与路由 name 对应
 const teacherMenus = [
-  { key: 'dashboard', label: '工作台', icon: DashboardOutlined },
+  { key: 'Dashboard', label: '工作台', icon: DashboardOutlined },
   { key: 'course', label: '课程管理', icon: BookOutlined },
   { key: 'question', label: '题库管理', icon: DatabaseOutlined },
   { key: 'exam', label: '组卷考试', icon: FormOutlined },
@@ -22,8 +22,9 @@ const teacherMenus = [
   { key: 'learning-stats', label: '学情分析', icon: BarChartOutlined }
 ]
 const adminMenus = [
-  { key: 'dashboard', label: '数据看板', icon: DashboardOutlined },
+  { key: 'Dashboard', label: '数据看板', icon: DashboardOutlined },
   { key: 'course-review', label: '课程审核', icon: BookOutlined },
+  { key: 'admin-course', label: '课程管理', icon: DatabaseOutlined },
   { key: 'notice', label: '公告管理', icon: NotificationOutlined },
   { key: 'comment', label: '评论管理', icon: MessageOutlined },
   { key: 'points-rule', label: '积分规则', icon: GiftOutlined },
@@ -34,6 +35,16 @@ const adminMenus = [
 
 const menus = computed(() => (userStore.isAdmin ? adminMenus : teacherMenus))
 const roleText = computed(() => (userStore.isAdmin ? '管理员' : '教师'))
+
+// 菜单点击跳转（未开发的模块给出提示）
+const developedRoutes = ['Dashboard', 'course', 'course-review', 'admin-course']
+function handleMenuClick({ key }) {
+  if (developedRoutes.includes(key)) {
+    router.push({ name: key })
+  } else {
+    message.info('该模块将在后续阶段开发')
+  }
+}
 
 function handleLogout() {
   Modal.confirm({
@@ -58,7 +69,7 @@ function handleLogout() {
         <div class="logo">AI</div>
         <span>学习平台管理端</span>
       </div>
-      <a-menu theme="dark" mode="inline" :selected-keys="[$route.name]">
+      <a-menu theme="dark" mode="inline" :selected-keys="[$route.name]" @click="handleMenuClick">
         <a-menu-item v-for="m in menus" :key="m.key">
           <component :is="m.icon" />
           <span>{{ m.label }}</span>

@@ -8,7 +8,12 @@ const routes = [
     component: () => import('../layouts/MainLayout.vue'),
     meta: { requiresAuth: true },
     children: [
-      { path: '', name: 'Dashboard', component: () => import('../views/dashboard/DashboardView.vue') }
+      { path: '', name: 'Dashboard', component: () => import('../views/dashboard/DashboardView.vue') },
+      // 教师：课程管理
+      { path: 'teacher/course', name: 'course', component: () => import('../views/teacher/CourseManageView.vue') },
+      // 管理员：课程审核、课程管理
+      { path: 'admin/course-review', name: 'course-review', component: () => import('../views/admin/CourseReviewView.vue') },
+      { path: 'admin/course', name: 'admin-course', component: () => import('../views/admin/CourseManageAdminView.vue') }
     ]
   }
 ]

@@ -9,7 +9,11 @@ const routes = [
     component: () => import('../layouts/MainLayout.vue'),
     meta: { requiresAuth: true },
     children: [
-      { path: '', name: 'Home', component: () => import('../views/home/HomeView.vue') }
+      { path: '', name: 'Home', redirect: '/square' },
+      { path: 'square', name: 'Square', component: () => import('../views/course/SquareView.vue') },
+      { path: 'course/:courseId', name: 'CourseDetail', component: () => import('../views/course/DetailView.vue') },
+      { path: 'my-courses', name: 'MyCourses', component: () => import('../views/course/MyCoursesView.vue') },
+      { path: 'study/:courseId/:videoId', name: 'Study', component: () => import('../views/study/StudyView.vue') }
     ]
   }
 ]
