@@ -1,7 +1,7 @@
 -- ============================================================
 -- AI 辅助在线学习平台 数据库初始化脚本
 -- 数据库：MySQL 8.x  字符集：utf8mb4
--- 共 20 张表：用户域 1 + 课程域 4 + 学习域 2 + 考试域 4
+-- 共 21 张表：用户域 1 + 课程域 4 + 学习域 2 + 考试域 5
 --            + AI 域 2 + 积分域 4 + 运营域 2 + 签到记录 1
 -- 测试账号密码均为 123456（BCrypt 加密）
 -- ============================================================
@@ -177,6 +177,21 @@ CREATE TABLE `exam_answer` (
   PRIMARY KEY (`id`),
   KEY `idx_record` (`record_id`)
 ) ENGINE = InnoDB COMMENT = '答题明细表';
+
+-- 11.5 练习/错题记录表（章节练习即时判分 + 错题本）
+DROP TABLE IF EXISTS `practice_record`;
+CREATE TABLE `practice_record` (
+  `id`             BIGINT   NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `student_id`     BIGINT   NOT NULL COMMENT '学生',
+  `question_id`    BIGINT   NOT NULL COMMENT '题目',
+  `student_answer` TEXT     COMMENT '学生答案',
+  `correct`        TINYINT  NOT NULL COMMENT '0错 1对',
+  `mastered`       TINYINT  NOT NULL DEFAULT 0 COMMENT '错题是否已标记掌握：0否 1是',
+  `create_time`    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '作答时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_student` (`student_id`),
+  KEY `idx_question` (`question_id`)
+) ENGINE = InnoDB COMMENT = '练习/错题记录表';
 
 -- ============================================================
 -- 五、AI 域

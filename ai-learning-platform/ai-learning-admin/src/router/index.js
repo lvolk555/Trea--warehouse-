@@ -11,6 +11,9 @@ const routes = [
       { path: '', name: 'Dashboard', component: () => import('../views/dashboard/DashboardView.vue') },
       // 教师：课程管理
       { path: 'teacher/course', name: 'course', component: () => import('../views/teacher/CourseManageView.vue') },
+      // 教师：题库管理、组卷考试
+      { path: 'teacher/question', name: 'question', component: () => import('../views/teacher/QuestionBankView.vue') },
+      { path: 'teacher/exam', name: 'exam', component: () => import('../views/teacher/ExamManageView.vue') },
       // 管理员：课程审核、课程管理
       { path: 'admin/course-review', name: 'course-review', component: () => import('../views/admin/CourseReviewView.vue') },
       { path: 'admin/course', name: 'admin-course', component: () => import('../views/admin/CourseManageAdminView.vue') }

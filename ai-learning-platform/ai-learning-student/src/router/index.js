@@ -13,7 +13,14 @@ const routes = [
       { path: 'square', name: 'Square', component: () => import('../views/course/SquareView.vue') },
       { path: 'course/:courseId', name: 'CourseDetail', component: () => import('../views/course/DetailView.vue') },
       { path: 'my-courses', name: 'MyCourses', component: () => import('../views/course/MyCoursesView.vue') },
-      { path: 'study/:courseId/:videoId', name: 'Study', component: () => import('../views/study/StudyView.vue') }
+      { path: 'study/:courseId/:videoId', name: 'Study', component: () => import('../views/study/StudyView.vue') },
+      // 练习与考试
+      { path: 'practice', name: 'Practice', component: () => import('../views/practice/PracticeView.vue') },
+      { path: 'error-book', name: 'ErrorBook', component: () => import('../views/practice/ErrorBookView.vue') },
+      { path: 'exam', name: 'ExamList', component: () => import('../views/exam/ExamListView.vue') },
+      { path: 'exam/:examId', name: 'ExamTake', component: () => import('../views/exam/ExamTakeView.vue') },
+      { path: 'exam-result/:recordId', name: 'ExamResult', component: () => import('../views/exam/ExamResultView.vue') },
+      { path: 'scores', name: 'Scores', component: () => import('../views/exam/ScoreListView.vue') }
     ]
   }
 ]

@@ -13,12 +13,17 @@ const userStore = useUserStore()
 // 学生端顶部导航（阶段二起逐步补充菜单项）
 const menus = [
   { key: 'Square', label: '课程广场' },
-  { key: 'MyCourses', label: '我的课程' }
+  { key: 'MyCourses', label: '我的课程' },
+  { key: 'Practice', label: '章节练习' },
+  { key: 'ExamList', label: '在线考试' },
+  { key: 'ErrorBook', label: '错题本' },
+  { key: 'Scores', label: '我的成绩' }
 ]
 
 const selectedKey = computed(() => {
   const name = route.name
   if (name === 'CourseDetail' || name === 'Study') return 'Square'
+  if (name === 'ExamTake' || name === 'ExamResult') return 'ExamList'
   return name
 })
 

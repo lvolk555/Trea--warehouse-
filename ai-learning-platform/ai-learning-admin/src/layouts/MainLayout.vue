@@ -37,7 +37,7 @@ const menus = computed(() => (userStore.isAdmin ? adminMenus : teacherMenus))
 const roleText = computed(() => (userStore.isAdmin ? '管理员' : '教师'))
 
 // 菜单点击跳转（未开发的模块给出提示）
-const developedRoutes = ['Dashboard', 'course', 'course-review', 'admin-course']
+const developedRoutes = ['Dashboard', 'course', 'course-review', 'admin-course', 'question', 'exam']
 function handleMenuClick({ key }) {
   if (developedRoutes.includes(key)) {
     router.push({ name: key })
