@@ -23,7 +23,7 @@ async function loadPoints() {
 }
 onMounted(loadPoints)
 
-// 学生端顶部导航（阶段二起逐步补充菜单项）
+// 学生端侧边导航
 const menus = [
   { key: 'Dashboard', label: '学习看板' },
   { key: 'Square', label: '课程广场' },
@@ -37,11 +37,18 @@ const menus = [
   { key: 'Notices', label: '公告' }
 ]
 
+const menuOptions = computed(() => menus.map(m => ({ key: m.key, label: m.label })))
+
 const selectedKey = computed(() => {
   const name = route.name
   if (name === 'CourseDetail' || name === 'Study') return 'Square'
   if (name === 'ExamTake' || name === 'ExamResult') return 'ExamList'
   return name
+})
+
+const currentTitle = computed(() => {
+  const item = menus.find(m => m.key === selectedKey.value)
+  return item ? item.label : ''
 })
 
 function handleMenuClick(key) {
@@ -78,14 +85,19 @@ function handleUserMenu(key) {
 
 <template>
   <n-layout has-sider style="height: 100vh">
+    <!-- 侧边导航 -->
+    <n-layout-sider bordered width="220">
+      <div class="sider-brand">
+        <div class="logo">AI</div>
+        <span>AI 辅助学习平台</span>
+      </div>
+      <n-menu :value="selectedKey" :options="menuOptions" @update:value="handleMenuClick" />
+    </n-layout-sider>
+
     <n-layout style="display: flex; flex-direction: column">
-      <!-- 顶部导航栏 -->
-      <n-layout-header bordered style="height: 60px; display: flex; align-items: center; padding: 0 24px; background: #fff">
-        <div class="brand">
-          <div class="logo">AI</div>
-          <span>AI 辅助在线学习平台</span>
-        </div>
-        <n-menu mode="horizontal" :value="selectedKey" :options="menus.map(m => ({ key: m.key, label: m.label }))" style="flex: 1" @update:value="handleMenuClick" />
+      <!-- 顶部栏 -->
+      <n-layout-header bordered style="height: 60px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; background: #fff">
+        <span class="page-title">{{ currentTitle }}</span>
         <div class="user-area">
           <n-tag type="warning" size="small" round style="cursor: pointer" @click="router.push('/points')">积分 {{ pointsBalance }}</n-tag>
           <n-dropdown :options="userMenuOptions" @select="handleUserMenu">
@@ -104,14 +116,15 @@ function handleUserMenu(key) {
 </template>
 
 <style scoped>
-.brand {
+.sider-brand {
   display: flex;
   align-items: center;
   gap: 10px;
+  padding: 18px 20px;
   font-weight: 600;
-  font-size: 16px;
-  margin-right: 24px;
+  font-size: 15px;
   white-space: nowrap;
+  color: #1f2937;
 }
 .logo {
   width: 32px;
@@ -124,6 +137,12 @@ function handleUserMenu(key) {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
+}
+.page-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
 }
 .user-area {
   display: flex;

@@ -2,6 +2,7 @@ package com.ailearning.module.course.controller;
 
 import com.ailearning.common.Result;
 import com.ailearning.module.course.dto.CourseVO;
+import com.ailearning.module.course.dto.SquareQueryDTO;
 import com.ailearning.module.course.entity.CourseEnrollment;
 import com.ailearning.module.course.service.CourseQueryService;
 import com.ailearning.module.course.service.EnrollmentService;
@@ -22,13 +23,12 @@ public class StudentCourseController {
     private final CourseQueryService courseQueryService;
     private final EnrollmentService enrollmentService;
 
-    /** 课程广场（分页 + 搜索 + 分类筛选） */
-    @GetMapping("/square")
-    public Result<IPage<CourseVO>> square(@RequestParam(defaultValue = "1") int page,
-                                          @RequestParam(defaultValue = "8") int size,
-                                          @RequestParam(required = false) String keyword,
-                                          @RequestParam(required = false) String category) {
-        return Result.ok(courseQueryService.courseSquare(page, size, keyword, category));
+    /** 课程广场（分页 + 搜索 + 分类筛选）。使用 POST + JSON 参数，避免中文关键字/分类经 URL 查询串传输时被转码导致 400。 */
+    @PostMapping("/square")
+    public Result<IPage<CourseVO>> square(@RequestBody SquareQueryDTO query) {
+        int page = (query.getPage() == null || query.getPage() < 1) ? 1 : query.getPage();
+        int size = (query.getSize() == null || query.getSize() < 1) ? 8 : query.getSize();
+        return Result.ok(courseQueryService.courseSquare(page, size, query.getKeyword(), query.getCategory()));
     }
 
     /** 课程详情（章节视频树 + 学习进度） */
