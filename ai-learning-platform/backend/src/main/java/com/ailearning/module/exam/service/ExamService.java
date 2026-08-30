@@ -18,6 +18,7 @@ import com.ailearning.module.exam.entity.Question;
 import com.ailearning.module.exam.mapper.ExamAnswerMapper;
 import com.ailearning.module.exam.mapper.ExamMapper;
 import com.ailearning.module.exam.mapper.ExamRecordMapper;
+import com.ailearning.module.points.service.PointsService;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -47,7 +48,11 @@ public class ExamService {
     private final CourseMapper courseMapper;
     private final CourseEnrollmentMapper enrollmentMapper;
     private final QuestionService questionService;
+    private final PointsService pointsService;
     private final ObjectMapper objectMapper;
+
+    /** 及格分数线（用于考试及格积分奖励） */
+    public static final int PASS_SCORE = 60;
 
     /** 试卷状态：0草稿 1已发布 */
     public static final int STATUS_DRAFT = 0;
@@ -224,6 +229,12 @@ public class ExamService {
                 : BigDecimal.valueOf(correctCount * 100.0 / total).setScale(1, RoundingMode.HALF_UP);
         record.setScore(score);
         examRecordMapper.updateById(record);
+
+        // 及格奖励：>=60 分触发（按 exam#id 幂等，AI 批改重算后补发也不会重复）
+        if (score.compareTo(BigDecimal.valueOf(PASS_SCORE)) >= 0) {
+            pointsService.grantOnceByRule(UserContext.userId(), "exam_pass", "exam#" + exam.getId(),
+                    "考试及格奖励（exam#" + exam.getId() + "）");
+        }
 
         ExamResultVO result = new ExamResultVO();
         result.setRecordId(record.getId());

@@ -8,6 +8,7 @@ import com.ailearning.module.course.entity.Video;
 import com.ailearning.module.course.mapper.ChapterMapper;
 import com.ailearning.module.course.mapper.CourseEnrollmentMapper;
 import com.ailearning.module.course.mapper.VideoMapper;
+import com.ailearning.module.points.service.PointsService;
 import com.ailearning.module.study.dto.ProgressReportDTO;
 import com.ailearning.module.study.entity.LearningRecord;
 import com.ailearning.module.study.mapper.LearningRecordMapper;
@@ -22,7 +23,7 @@ import java.util.List;
 
 /**
  * 学习进度服务：播放位置上报、断点续播、完课标记、课程完成度重算
- * 说明：完课积分奖励将在阶段五积分模块中通过事件/调用接入，本阶段仅维护学习数据
+ * 阶段五：首次完课触发 video_finish 积分奖励（每日上限由积分服务校验）
  */
 @Service
 @RequiredArgsConstructor
@@ -32,6 +33,7 @@ public class StudyService {
     private final VideoMapper videoMapper;
     private final ChapterMapper chapterMapper;
     private final CourseEnrollmentMapper enrollmentMapper;
+    private final PointsService pointsService;
 
     /**
      * 上报播放进度；首次看完时标记完课并重算课程完成度
@@ -69,12 +71,13 @@ public class StudyService {
         }
         learningRecordMapper.updateById(record);
 
-        // 首次完课 → 重算所属课程完成度
+        // 首次完课 → 重算所属课程完成度 + 发放完课积分（幂等：仅 firstFinish 触发一次）
         if (firstFinish) {
             Chapter chapter = chapterMapper.selectById(video.getChapterId());
             if (chapter != null) {
                 refreshCourseProgress(studentId, chapter.getCourseId());
             }
+            pointsService.grantByRule(studentId, "video_finish", "完成视频《" + video.getTitle() + "》");
         }
         return record;
     }

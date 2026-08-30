@@ -1,14 +1,27 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useMessage, useDialog } from 'naive-ui'
 import { useUserStore } from '../stores/user'
+import { pointsAccount } from '../api/points'
 
 const router = useRouter()
 const route = useRoute()
 const message = useMessage()
 const dialog = useDialog()
 const userStore = useUserStore()
+
+// 顶部实时显示积分余额
+const pointsBalance = ref('--')
+async function loadPoints() {
+  try {
+    const acc = await pointsAccount()
+    pointsBalance.value = acc.balance
+  } catch (e) {
+    /* 未登录或接口异常时保持占位 */
+  }
+}
+onMounted(loadPoints)
 
 // 学生端顶部导航（阶段二起逐步补充菜单项）
 const menus = [
@@ -18,7 +31,9 @@ const menus = [
   { key: 'ExamList', label: '在线考试' },
   { key: 'ErrorBook', label: '错题本' },
   { key: 'Scores', label: '我的成绩' },
-  { key: 'AiChat', label: 'AI 答疑' }
+  { key: 'AiChat', label: 'AI 答疑' },
+  { key: 'PointsCenter', label: '积分中心' },
+  { key: 'Notices', label: '公告' }
 ]
 
 const selectedKey = computed(() => {
@@ -58,7 +73,7 @@ function handleLogout() {
         </div>
         <n-menu mode="horizontal" :value="selectedKey" :options="menus.map(m => ({ key: m.key, label: m.label }))" style="flex: 1" @update:value="handleMenuClick" />
         <div class="user-area">
-          <n-tag type="warning" size="small" round>积分 --</n-tag>
+          <n-tag type="warning" size="small" round style="cursor: pointer" @click="router.push('/points')">积分 {{ pointsBalance }}</n-tag>
           <n-dropdown :options="[{ key: 'logout', label: '退出登录' }]" @select="handleLogout">
             <n-button quaternary>
               {{ userStore.user?.nickname || userStore.user?.username }}

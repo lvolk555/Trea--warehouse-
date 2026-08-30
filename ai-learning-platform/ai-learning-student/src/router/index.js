@@ -22,7 +22,10 @@ const routes = [
       { path: 'exam-result/:recordId', name: 'ExamResult', component: () => import('../views/exam/ExamResultView.vue') },
       { path: 'scores', name: 'Scores', component: () => import('../views/exam/ScoreListView.vue') },
       // AI 答疑
-      { path: 'ai-chat', name: 'AiChat', component: () => import('../views/ai/AiChatView.vue') }
+      { path: 'ai-chat', name: 'AiChat', component: () => import('../views/ai/AiChatView.vue') },
+      // 积分中心与公告
+      { path: 'points', name: 'PointsCenter', component: () => import('../views/points/PointsCenterView.vue') },
+      { path: 'notices', name: 'Notices', component: () => import('../views/notice/NoticeListView.vue') }
     ]
   }
 ]

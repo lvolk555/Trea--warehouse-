@@ -2,6 +2,7 @@ package com.ailearning.module.user.service;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.ailearning.common.BizException;
+import com.ailearning.module.points.service.PointsService;
 import com.ailearning.module.user.dto.LoginDTO;
 import com.ailearning.module.user.dto.LoginVO;
 import com.ailearning.module.user.dto.RegisterDTO;
@@ -12,6 +13,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 用户服务：注册、登录、个人中心
@@ -21,6 +23,7 @@ import org.springframework.stereotype.Service;
 public class UserService {
 
     private final UserMapper userMapper;
+    private final PointsService pointsService;
 
     /** BCrypt 密码加密器（兼容 $2a$/$2b$/$2y$ 前缀） */
     private static final BCryptPasswordEncoder PASSWORD_ENCODER = new BCryptPasswordEncoder();
@@ -31,8 +34,9 @@ public class UserService {
     public static final int ROLE_ADMIN = 3;
 
     /**
-     * 注册（默认学生角色），用户名唯一校验
+     * 注册（默认学生角色），用户名唯一校验；注册成功按规则赠送积分
      */
+    @Transactional(rollbackFor = Exception.class)
     public User register(RegisterDTO dto) {
         Long count = userMapper.selectCount(
                 new LambdaQueryWrapper<User>().eq(User::getUsername, dto.getUsername()));
@@ -46,6 +50,8 @@ public class UserService {
         user.setRole(ROLE_STUDENT);
         user.setStatus(1);
         userMapper.insert(user);
+        // 注册赠送积分（走 register_gift 规则，可被管理员调整/停用）
+        pointsService.grantByRule(user.getId(), "register_gift", "注册赠送积分");
         return user;
     }
 

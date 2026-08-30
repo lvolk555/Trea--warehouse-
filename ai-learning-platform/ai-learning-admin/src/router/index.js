@@ -19,7 +19,13 @@ const routes = [
       { path: 'teacher/ai-grade', name: 'ai-grade', component: () => import('../views/teacher/AiGradeView.vue') },
       // 管理员：课程审核、课程管理
       { path: 'admin/course-review', name: 'course-review', component: () => import('../views/admin/CourseReviewView.vue') },
-      { path: 'admin/course', name: 'admin-course', component: () => import('../views/admin/CourseManageAdminView.vue') }
+      { path: 'admin/course', name: 'admin-course', component: () => import('../views/admin/CourseManageAdminView.vue') },
+      // 管理员：运营（公告/评论/积分规则/兑换记录/用户管理）
+      { path: 'admin/notice', name: 'notice', component: () => import('../views/admin/NoticeManageView.vue') },
+      { path: 'admin/comment', name: 'comment', component: () => import('../views/admin/CommentManageView.vue') },
+      { path: 'admin/points-rule', name: 'points-rule', component: () => import('../views/admin/PointsRuleView.vue') },
+      { path: 'admin/exchange-record', name: 'exchange-record', component: () => import('../views/admin/ExchangeRecordView.vue') },
+      { path: 'admin/user', name: 'user-manage', component: () => import('../views/admin/UserManageView.vue') }
     ]
   }
 ]

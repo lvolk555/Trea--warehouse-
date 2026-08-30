@@ -9,6 +9,7 @@ import com.ailearning.module.ai.mapper.AiChatMessageMapper;
 import com.ailearning.module.ai.mapper.AiChatSessionMapper;
 import com.ailearning.module.course.entity.Course;
 import com.ailearning.module.course.mapper.CourseMapper;
+import com.ailearning.module.points.service.PointsService;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +34,7 @@ public class AiChatService {
     private final AiChatMessageMapper messageMapper;
     private final CourseMapper courseMapper;
     private final ZhipuAiClient zhipuAiClient;
+    private final PointsService pointsService;
 
     /** 多轮历史最多携带的条数（防止 prompt 过长） */
     private static final int MAX_HISTORY = 10;
@@ -101,11 +103,14 @@ public class AiChatService {
             return sessionFrame.concatWith(Flux.just(fallback));
         }
 
-        // 流式输出，聚合完整回答用于落库
+        // 流式输出，聚合完整回答用于落库；回答完成后发放 AI 提问积分（每日上限由积分服务控制，防刷）
         StringBuilder fullAnswer = new StringBuilder();
         Flux<String> stream = zhipuAiClient.chatStream(systemPrompt, history)
                 .doOnNext(fullAnswer::append)
-                .doOnComplete(() -> saveMessage(session.getId(), "assistant", fullAnswer.toString()))
+                .doOnComplete(() -> {
+                    saveMessage(session.getId(), "assistant", fullAnswer.toString());
+                    pointsService.grantByRule(studentId, "ai_ask", "AI 答疑提问奖励");
+                })
                 .onErrorResume(e -> {
                     // 降级：大模型超时/异常不阻断，返回友好提示
                     log.error("AI 答疑调用失败", e);

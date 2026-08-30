@@ -17,6 +17,8 @@ import com.ailearning.module.exam.mapper.ExamAnswerMapper;
 import com.ailearning.module.exam.mapper.ExamMapper;
 import com.ailearning.module.exam.mapper.ExamRecordMapper;
 import com.ailearning.module.exam.mapper.QuestionMapper;
+import com.ailearning.module.exam.service.ExamService;
+import com.ailearning.module.points.service.PointsService;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -51,6 +53,7 @@ public class AiGenerateService {
     private final ExamMapper examMapper;
     private final ExamRecordMapper examRecordMapper;
     private final ExamAnswerMapper examAnswerMapper;
+    private final PointsService pointsService;
 
     /** 来源：2 AI 生成 */
     private static final int SOURCE_AI = 2;
@@ -281,6 +284,11 @@ public class AiGenerateService {
         if (record != null) {
             record.setScore(score);
             examRecordMapper.updateById(record);
+            // AI 批改后分数可能跨过及格线：补发及格奖励（按 exam#id 幂等，已发过则跳过）
+            if (score.compareTo(BigDecimal.valueOf(ExamService.PASS_SCORE)) >= 0) {
+                pointsService.grantOnceByRule(record.getStudentId(), "exam_pass", "exam#" + record.getExamId(),
+                        "考试及格奖励（exam#" + record.getExamId() + "）");
+            }
         }
         return score;
     }
