@@ -1,0 +1,1271 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 辅助在线学习平台 - 原型</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --primary: #4B3FE3; --primary-light: #F2F7FF; --primary-dark: #3C2ECA;
+    --bg: #F5F6FA; --card: #FFFFFF; --text: #171717; --text-2: #52525B; --text-3: #A1A1AA;
+    --border: #E8E8EE; --success: #1DC981; --warning: #EFAA17; --danger: #E8463A; --radius: 10px;
+    --gold: #E8A33D; --gold-light: #FEF6E4;
+  }
+  body { font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif; background: var(--bg); color: var(--text); }
+  .proto-bar { position: sticky; top: 0; z-index: 100; background: #1A1759; color: #fff; display: flex; align-items: center; justify-content: space-between; padding: 10px 24px; font-size: 14px; }
+  .proto-bar .title { font-weight: 600; }
+  .proto-bar .switch { display: flex; gap: 8px; }
+  .proto-bar button { border: 1px solid rgba(255,255,255,.35); background: transparent; color: #fff; padding: 6px 18px; border-radius: 999px; cursor: pointer; font-size: 13px; transition: .2s; }
+  .proto-bar button.active { background: #fff; color: var(--primary-dark); font-weight: 600; border-color: #fff; }
+  .view { display: none; } .view.active { display: block; }
+  .layout { display: flex; min-height: calc(100vh - 76px); }
+  .sidebar { width: 210px; background: var(--card); border-right: 1px solid var(--border); padding: 20px 0; flex-shrink: 0; }
+  .sidebar .logo { display: flex; align-items: center; gap: 10px; padding: 0 20px 20px; font-weight: 700; font-size: 16px; color: var(--primary); }
+  .sidebar .logo .icon { width: 32px; height: 32px; background: var(--primary); color: #fff; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+  .menu-group { font-size: 12px; color: var(--text-3); padding: 12px 24px 6px; }
+  .menu-item { display: flex; align-items: center; gap: 10px; padding: 11px 24px; color: var(--text-2); cursor: pointer; font-size: 14px; border-left: 3px solid transparent; transition: .15s; }
+  .menu-item:hover { background: var(--primary-light); color: var(--primary); }
+  .menu-item.active { background: var(--primary-light); color: var(--primary); border-left-color: var(--primary); font-weight: 600; }
+  .main { flex: 1; padding: 24px 28px; overflow-x: auto; }
+  .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+  .topbar h2 { font-size: 20px; }
+  .user-chip { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--text-2); }
+  .avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, #6F6FFF, #4B3FE3); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; }
+  .points-badge { display: flex; align-items: center; gap: 5px; background: var(--gold-light); color: #B7791F; padding: 5px 13px; border-radius: 999px; font-size: 13px; font-weight: 700; cursor: pointer; }
+  .page { display: none; } .page.active { display: block; animation: fadeIn .25s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
+  .stat-card { background: var(--card); border-radius: var(--radius); padding: 20px; border: 1px solid var(--border); }
+  .stat-card .label { font-size: 13px; color: var(--text-3); margin-bottom: 8px; }
+  .stat-card .value { font-size: 26px; font-weight: 700; }
+  .stat-card .value.gold { color: var(--gold); }
+  .stat-card .trend { font-size: 12px; margin-top: 6px; color: var(--text-3); }
+  .trend.up { color: var(--success); } .trend.down { color: var(--danger); }
+  .card { background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); padding: 20px; margin-bottom: 20px; }
+  .card-title { font-size: 15px; font-weight: 600; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
+  .course-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .course-card { background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; cursor: pointer; transition: .2s; }
+  .course-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(75,63,227,.12); }
+  .course-cover { height: 120px; display: flex; align-items: center; justify-content: center; font-size: 40px; color: #fff; position: relative; }
+  .cover-1 { background: linear-gradient(135deg, #4B3FE3, #6F6FFF); } .cover-2 { background: linear-gradient(135deg, #22A5F7, #6F6FFF); }
+  .cover-3 { background: linear-gradient(135deg, #27D2BF, #22A5F7); } .cover-4 { background: linear-gradient(135deg, #F87454, #EFAA17); }
+  .cover-5 { background: linear-gradient(135deg, #EC4899, #6F6FFF); } .cover-6 { background: linear-gradient(135deg, #EFAA17, #F87454); }
+  .course-cover .price { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,.55); color: #fff; font-size: 12px; padding: 3px 10px; border-radius: 999px; font-weight: 600; }
+  .course-cover .price.gold { background: var(--gold); }
+  .course-body { padding: 14px 16px; }
+  .course-body h4 { font-size: 15px; margin-bottom: 6px; }
+  .course-body .meta { font-size: 12px; color: var(--text-3); display: flex; justify-content: space-between; margin-bottom: 10px; }
+  .progress-bar { height: 6px; background: var(--border); border-radius: 999px; overflow: hidden; }
+  .progress-bar .fill { height: 100%; background: var(--primary); border-radius: 999px; }
+  .progress-text { font-size: 12px; color: var(--text-2); margin-top: 6px; }
+  .tag { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; }
+  .tag-purple { background: var(--primary-light); color: var(--primary); }
+  .tag-green { background: #E6F9F1; color: var(--success); }
+  .tag-orange { background: #FEF6E4; color: var(--warning); }
+  .tag-red { background: #FDECEA; color: var(--danger); }
+  .tag-gray { background: #F0F0F4; color: var(--text-2); }
+  .tag-gold { background: var(--gold-light); color: #B7791F; }
+  .btn { border: none; border-radius: 8px; padding: 8px 18px; font-size: 13px; cursor: pointer; transition: .15s; }
+  .btn-primary { background: var(--primary); color: #fff; } .btn-primary:hover { background: var(--primary-dark); }
+  .btn-gold { background: var(--gold); color: #fff; } .btn-gold:hover { filter: brightness(.95); }
+  .btn-plain { background: var(--card); color: var(--text-2); border: 1px solid var(--border); }
+  .btn-plain:hover { color: var(--primary); border-color: var(--primary); }
+  .btn-sm { padding: 4px 12px; font-size: 12px; }
+  .btn-success { background: var(--success); color: #fff; }
+  .btn-danger { background: #fff; color: var(--danger); border: 1px solid var(--danger); }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 12px; color: var(--text-3); font-weight: 500; border-bottom: 1px solid var(--border); background: #FAFAFC; }
+  td { padding: 13px 12px; border-bottom: 1px solid var(--border); color: var(--text-2); vertical-align: top; }
+  tr:hover td { background: #FAFAFF; }
+  .study-layout { display: grid; grid-template-columns: 1fr 320px; gap: 20px; }
+  .video-box { background: #111; border-radius: var(--radius); aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center; position: relative; }
+  .play-btn { width: 64px; height: 64px; border-radius: 50%; background: rgba(255,255,255,.9); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+  .play-btn::after { content: ""; border-left: 22px solid var(--primary); border-top: 13px solid transparent; border-bottom: 13px solid transparent; margin-left: 5px; }
+  .video-bar { position: absolute; bottom: 0; left: 0; right: 0; padding: 12px 16px; background: linear-gradient(transparent, rgba(0,0,0,.7)); }
+  .video-bar .progress-bar { background: rgba(255,255,255,.3); }
+  .video-bar .time { color: #fff; font-size: 12px; margin-top: 6px; }
+  .points-toast { position: absolute; top: 14px; right: 14px; background: var(--gold); color: #fff; font-size: 13px; font-weight: 700; padding: 8px 16px; border-radius: 999px; box-shadow: 0 4px 14px rgba(232,163,61,.4); animation: pop .4s ease; }
+  @keyframes pop { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .chapter-item { display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 8px; cursor: pointer; font-size: 13px; color: var(--text-2); }
+  .chapter-item:hover { background: var(--primary-light); }
+  .chapter-item.playing { background: var(--primary-light); color: var(--primary); font-weight: 600; }
+  .chapter-item .st { margin-left: auto; font-size: 12px; white-space: nowrap; }
+  .st-done { color: var(--success); } .st-ing { color: var(--warning); }
+  .chat-layout { display: grid; grid-template-columns: 240px 1fr; gap: 20px; height: calc(100vh - 210px); min-height: 480px; }
+  .session-list { background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); padding: 14px; overflow-y: auto; }
+  .session-item { padding: 10px 12px; border-radius: 8px; cursor: pointer; font-size: 13px; color: var(--text-2); margin-bottom: 6px; }
+  .session-item:hover { background: var(--primary-light); }
+  .session-item.active { background: var(--primary-light); color: var(--primary); font-weight: 600; }
+  .session-item .time { font-size: 11px; color: var(--text-3); margin-top: 3px; }
+  .chat-panel { background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); display: flex; flex-direction: column; }
+  .chat-header { padding: 14px 20px; border-bottom: 1px solid var(--border); font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .chat-messages { flex: 1; padding: 20px; overflow-y: auto; }
+  .msg { display: flex; gap: 10px; margin-bottom: 18px; max-width: 85%; }
+  .msg.user { margin-left: auto; flex-direction: row-reverse; }
+  .msg .avatar { width: 32px; height: 32px; font-size: 12px; flex-shrink: 0; }
+  .msg.ai .avatar { background: linear-gradient(135deg, #27D2BF, #22A5F7); }
+  .bubble { padding: 10px 14px; border-radius: 10px; font-size: 13px; line-height: 1.7; }
+  .msg.user .bubble { background: var(--primary); color: #fff; border-top-right-radius: 2px; }
+  .msg.ai .bubble { background: #F4F4F8; color: var(--text); border-top-left-radius: 2px; }
+  .bubble code { background: rgba(0,0,0,.06); padding: 1px 5px; border-radius: 4px; font-family: Consolas, monospace; font-size: 12px; }
+  .chat-input { border-top: 1px solid var(--border); padding: 14px 20px; display: flex; gap: 10px; }
+  .chat-input input { flex: 1; border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 13px; outline: none; }
+  .chat-input input:focus { border-color: var(--primary); }
+  .typing::after { content: "▍"; animation: blink 1s infinite; color: var(--primary); }
+  @keyframes blink { 50% { opacity: 0; } }
+  .question-card { background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); padding: 24px; max-width: 760px; }
+  .q-title { font-size: 15px; line-height: 1.7; margin: 14px 0 18px; }
+  .option { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 10px; cursor: pointer; font-size: 14px; transition: .15s; }
+  .option:hover { border-color: var(--primary); }
+  .option.selected { border-color: var(--primary); background: var(--primary-light); }
+  .option.correct { border-color: var(--success); background: #E6F9F1; }
+  .option.wrong { border-color: var(--danger); background: #FDECEA; }
+  .option .key { width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; }
+  .option.selected .key { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .analysis-box { background: var(--primary-light); border-radius: 8px; padding: 14px 16px; font-size: 13px; line-height: 1.7; color: var(--text-2); margin-top: 16px; display: none; }
+  .analysis-box.show { display: block; }
+  .exam-layout { display: grid; grid-template-columns: 1fr 240px; gap: 20px; max-width: 1000px; }
+  .exam-timer { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; text-align: center; margin-bottom: 16px; }
+  .exam-timer .time { font-size: 28px; font-weight: 700; color: var(--primary); font-variant-numeric: tabular-nums; }
+  .exam-timer .label { font-size: 12px; color: var(--text-3); margin-top: 4px; }
+  .q-nav { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+  .q-nav .qn { aspect-ratio: 1; border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 13px; cursor: pointer; color: var(--text-2); }
+  .q-nav .qn.answered { background: var(--primary-light); border-color: var(--primary); color: var(--primary); font-weight: 600; }
+  .q-nav .qn.current { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .exam-result { display: none; text-align: center; padding: 40px 20px; }
+  .exam-result.show { display: block; }
+  .score-circle { width: 140px; height: 140px; border-radius: 50%; border: 8px solid var(--primary); display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0 auto 20px; }
+  .score-circle .num { font-size: 38px; font-weight: 700; color: var(--primary); }
+  .score-circle .unit { font-size: 12px; color: var(--text-3); }
+  .form-row { display: flex; gap: 12px; margin-bottom: 14px; }
+  .form-item { flex: 1; }
+  .form-item label { display: block; font-size: 13px; color: var(--text-2); margin-bottom: 6px; }
+  .form-item input, .form-item select, .form-item textarea { width: 100%; border: 1px solid var(--border); border-radius: 8px; padding: 9px 12px; font-size: 13px; outline: none; font-family: inherit; }
+  .form-item input:focus, .form-item select:focus, .form-item textarea:focus { border-color: var(--primary); }
+  .proto-note { background: #FEF6E4; color: #92600A; font-size: 12px; padding: 8px 16px; text-align: center; }
+  .gen-layout { display: grid; grid-template-columns: 340px 1fr; gap: 20px; align-items: start; }
+  .gen-question { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; margin-bottom: 14px; animation: fadeIn .3s ease; }
+  .gen-question .q-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .gen-question .q-content { font-size: 14px; line-height: 1.7; margin-bottom: 10px; }
+  .gen-question .q-opts { font-size: 13px; color: var(--text-2); line-height: 1.9; margin-bottom: 10px; }
+  .gen-question .q-answer { font-size: 12px; background: #F4F4F8; border-radius: 6px; padding: 8px 12px; color: var(--text-2); line-height: 1.6; }
+  .gen-question.approved { border-color: var(--success); }
+  .gen-question.rejected { opacity: .45; }
+  .ai-loading { display: none; align-items: center; gap: 10px; padding: 20px; color: var(--text-2); font-size: 13px; }
+  .ai-loading.show { display: flex; }
+  .spinner { width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .grade-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
+  .grade-answer { background: #F4F4F8; border-radius: 8px; padding: 14px 16px; font-size: 13px; line-height: 1.8; color: var(--text-2); margin: 12px 0; }
+  .ai-grade-result { display: none; border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-top: 12px; }
+  .ai-grade-result.show { display: block; animation: fadeIn .3s ease; }
+  .ai-score-line { display: flex; align-items: center; gap: 16px; margin-bottom: 10px; }
+  .ai-score-badge { font-size: 24px; font-weight: 700; color: var(--primary); }
+  .ai-comment { font-size: 13px; line-height: 1.8; color: var(--text-2); }
+  .wrong-item { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; margin-bottom: 14px; max-width: 800px; }
+  .wrong-item .q-meta { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
+  .bar-chart { display: flex; align-items: flex-end; gap: 14px; height: 180px; padding: 10px 6px 0; }
+  .bar-chart .bar-col { flex: 1; text-align: center; display: flex; flex-direction: column; justify-content: flex-end; height: 100%; }
+  .bar-chart .bar { background: var(--primary-light); border-radius: 6px 6px 0 0; min-height: 8px; }
+  .bar-chart .bar.hi { background: var(--primary); }
+  .bar-chart .bar-label { font-size: 11px; color: var(--text-3); margin-top: 6px; }
+  .bar-chart .bar-val { font-size: 11px; color: var(--text-2); margin-bottom: 4px; }
+  .task-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .task-card { border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; text-align: center; }
+  .task-card .t-icon { font-size: 26px; margin-bottom: 8px; }
+  .task-card .t-name { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+  .task-card .t-reward { font-size: 12px; color: var(--gold); font-weight: 700; margin-bottom: 8px; }
+  .task-card .t-prog { font-size: 11px; color: var(--text-3); margin-bottom: 8px; }
+  .chap-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .chap-tab { padding: 7px 16px; border: 1px solid var(--border); border-radius: 999px; font-size: 13px; cursor: pointer; color: var(--text-2); background: var(--card); }
+  .chap-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .crumb { font-size: 13px; color: var(--text-3); margin-bottom: 14px; }
+  .crumb b { color: var(--text); }
+  .info-note { background: var(--primary-light); color: var(--primary-dark); font-size: 12px; padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; line-height: 1.7; }
+</style>
+</head>
+<body>
+<div class="proto-bar">
+  <div class="title">AI 辅助在线学习平台 · 交互原型</div>
+  <div class="switch">
+    <button class="active" onclick="switchView('student', this)">学生端</button>
+    <button onclick="switchView('teacher', this)">教师端</button>
+    <button onclick="switchView('admin', this)">管理端</button>
+  </div>
+</div>
+<div class="proto-note">原型演示：数据均为模拟。推荐体验 → 学生端「积分中心 / 学习中心完课得积分 / AI 答疑」，教师端「题库管理 / AI 出题」，管理端「积分规则 / 兑换记录」</div>
+
+<!-- ================= 学生端 ================= -->
+<div id="view-student" class="view active">
+  <div class="layout">
+    <div class="sidebar">
+      <div class="logo"><div class="icon">AI</div>智学平台</div>
+      <div class="menu-group">学习</div>
+      <div class="menu-item active" onclick="switchPage('student','home',this)">🏠 课程广场</div>
+      <div class="menu-item" onclick="switchPage('student','mycourse',this)">📚 我的课程</div>
+      <div class="menu-item" onclick="switchPage('student','study',this)">▶️ 学习中心</div>
+      <div class="menu-group">练习与考试</div>
+      <div class="menu-item" onclick="switchPage('student','practice',this)">✏️ 章节练习</div>
+      <div class="menu-item" onclick="switchPage('student','exam',this)">📝 在线考试</div>
+      <div class="menu-item" onclick="switchPage('student','wrong',this)">❌ 错题本</div>
+      <div class="menu-item" onclick="switchPage('student','score',this)">🏆 我的成绩</div>
+      <div class="menu-group">积分</div>
+      <div class="menu-item" onclick="switchPage('student','points',this)">🔶 积分中心</div>
+      <div class="menu-group">AI 助手</div>
+      <div class="menu-item" onclick="switchPage('student','ai',this)">🤖 AI 答疑</div>
+      <div class="menu-group">账户</div>
+      <div class="menu-item" onclick="switchPage('student','profile',this)">👤 个人中心</div>
+    </div>
+    <div class="main">
+      <div class="topbar">
+        <h2 id="student-title">课程广场</h2>
+        <div class="user-chip">
+          <div class="points-badge" onclick="gotoStudent('points')">🔶 <span id="topPoints">1,280</span> 积分</div>
+          <div class="avatar">李</div>李同学 · 学生
+        </div>
+      </div>
+
+      <div id="student-home" class="page active">
+        <div class="form-row" style="max-width:560px;margin-bottom:20px;">
+          <div class="form-item"><input placeholder="🔍 搜索课程名称 / 分类"></div>
+          <div class="form-item" style="flex:0 0 130px;"><select><option>全部分类</option><option>编程开发</option><option>数据结构</option><option>数据库</option></select></div>
+          <div class="form-item" style="flex:0 0 130px;"><select><option>全部类型</option><option>免费课程</option><option>积分兑换</option></select></div>
+        </div>
+        <div class="course-grid">
+          <div class="course-card" onclick="gotoStudent('mycourse')">
+            <div class="course-cover cover-1">☕<span class="price">免费</span></div>
+            <div class="course-body"><h4>Java 程序设计</h4><div class="meta"><span>王老师</span><span>328 人选课</span></div><span class="tag tag-purple">编程开发</span></div>
+          </div>
+          <div class="course-card">
+            <div class="course-cover cover-2">🌲<span class="price">免费</span></div>
+            <div class="course-body"><h4>数据结构与算法</h4><div class="meta"><span>张老师</span><span>256 人选课</span></div><span class="tag tag-purple">计算机基础</span></div>
+          </div>
+          <div class="course-card">
+            <div class="course-cover cover-3">🤖<span class="price">免费</span></div>
+            <div class="course-body"><h4>Spring Boot 企业级开发</h4><div class="meta"><span>王老师</span><span>412 人选课</span></div><span class="tag tag-purple">编程开发</span></div>
+          </div>
+          <div class="course-card" onclick="tryExchange('MySQL 数据库原理', 500)">
+            <div class="course-cover cover-4">🗄️<span class="price gold">🔶 500 积分</span></div>
+            <div class="course-body"><h4>MySQL 数据库原理</h4><div class="meta"><span>刘老师</span><span>198 人选课</span></div><span class="tag tag-gold">积分兑换</span></div>
+          </div>
+          <div class="course-card">
+            <div class="course-cover cover-5">🎨<span class="price">免费</span></div>
+            <div class="course-body"><h4>Vue 3 前端开发实战</h4><div class="meta"><span>陈老师</span><span>367 人选课</span></div><span class="tag tag-purple">编程开发</span></div>
+          </div>
+          <div class="course-card" onclick="tryExchange('操作系统原理', 300)">
+            <div class="course-cover cover-6">📐<span class="price gold">🔶 300 积分</span></div>
+            <div class="course-body"><h4>操作系统原理</h4><div class="meta"><span>赵老师</span><span>145 人选课</span></div><span class="tag tag-gold">积分兑换</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="student-mycourse" class="page">
+        <div class="course-grid">
+          <div class="course-card" onclick="gotoStudent('study')">
+            <div class="course-cover cover-1">☕</div>
+            <div class="course-body"><h4>Java 程序设计</h4><div class="meta"><span>王老师</span><span>30 节</span></div>
+            <div class="progress-bar"><div class="fill" style="width:40%"></div></div><div class="progress-text">已学 12/30 节 · 40%</div></div>
+          </div>
+          <div class="course-card">
+            <div class="course-cover cover-3">🤖</div>
+            <div class="course-body"><h4>Spring Boot 企业级开发</h4><div class="meta"><span>王老师</span><span>24 节</span></div>
+            <div class="progress-bar"><div class="fill" style="width:12%"></div></div><div class="progress-text">已学 3/24 节 · 12%</div></div>
+          </div>
+          <div class="course-card">
+            <div class="course-cover cover-5">🎨</div>
+            <div class="course-body"><h4>Vue 3 前端开发实战</h4><div class="meta"><span>陈老师</span><span>20 节</span></div>
+            <div class="progress-bar"><div class="fill" style="width:75%"></div></div><div class="progress-text">已学 15/20 节 · 75%</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="student-study" class="page">
+        <div class="study-layout">
+          <div>
+            <div class="video-box" id="videoBox">
+              <div class="play-btn" onclick="earnPoints()"></div>
+              <div class="video-bar"><div class="progress-bar"><div class="fill" style="width:62%"></div></div><div class="time">18:36 / 30:00</div></div>
+            </div>
+            <div class="card" style="margin-top:16px;">
+              <h3 style="font-size:16px;margin-bottom:8px;">2.3 面向对象：继承与多态</h3>
+              <div style="font-size:13px;color:var(--text-3);margin-bottom:12px;">Java 程序设计 · 第二章 面向对象编程</div>
+              <div style="display:flex;gap:10px;">
+                <button class="btn btn-plain btn-sm">📝 记笔记</button>
+                <button class="btn btn-plain btn-sm" onclick="gotoStudent('ai')">🤖 问 AI</button>
+                <button class="btn btn-plain btn-sm" onclick="gotoStudent('practice')">✏️ 去练习</button>
+              </div>
+            </div>
+            <div class="info-note">🔶 积分奖励：每完整学完 1 节视频可获得 <b>+10 积分</b>，积分可在「积分中心」兑换付费课程。点击视频播放按钮模拟完课得积分。</div>
+          </div>
+          <div class="card" style="margin-bottom:0;max-height:560px;overflow-y:auto;">
+            <div class="card-title">课程目录</div>
+            <div style="font-size:13px;font-weight:600;color:var(--text-3);padding:8px 12px;">第一章 Java 基础</div>
+            <div class="chapter-item">1.1 开发环境搭建 <span class="st st-done">✓ 已学完</span></div>
+            <div class="chapter-item">1.2 变量与数据类型 <span class="st st-done">✓ 已学完</span></div>
+            <div class="chapter-item">1.3 流程控制 <span class="st st-done">✓ 已学完</span></div>
+            <div style="font-size:13px;font-weight:600;color:var(--text-3);padding:8px 12px;">第二章 面向对象编程</div>
+            <div class="chapter-item">2.1 类与对象 <span class="st st-done">✓ 已学完</span></div>
+            <div class="chapter-item">2.2 构造方法与重载 <span class="st st-done">✓ 已学完</span></div>
+            <div class="chapter-item playing">▶ 2.3 继承与多态 <span class="st st-ing">学习中</span></div>
+            <div class="chapter-item">2.4 抽象类与接口 <span class="st" style="color:var(--text-3)">未开始</span></div>
+            <div class="chapter-item">2.5 内部类 <span class="st" style="color:var(--text-3)">未开始</span></div>
+            <div style="font-size:13px;font-weight:600;color:var(--text-3);padding:8px 12px;">第三章 集合框架</div>
+            <div class="chapter-item">3.1 List 与 ArrayList <span class="st" style="color:var(--text-3)">未开始</span></div>
+            <div class="chapter-item">3.2 HashMap 原理 <span class="st" style="color:var(--text-3)">未开始</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="student-practice" class="page">
+        <div class="question-card">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span class="tag tag-purple">单选题 · Java 程序设计 · 第二章</span>
+            <span style="font-size:13px;color:var(--text-3);">第 3 / 10 题</span>
+          </div>
+          <div class="q-title">关于 Java 中的多态，下列说法正确的是？</div>
+          <div class="option" onclick="selectOption(this)"><span class="key">A</span>多态是指一个类只能有一个父类</div>
+          <div class="option" onclick="selectOption(this)"><span class="key">B</span>方法重写是实现多态的基础，父类引用可以指向子类对象</div>
+          <div class="option" onclick="selectOption(this)"><span class="key">C</span>静态方法可以被重写从而实现多态</div>
+          <div class="option" onclick="selectOption(this)"><span class="key">D</span>private 修饰的方法可以被子类重写</div>
+          <div style="display:flex;gap:10px;margin-top:20px;">
+            <button class="btn btn-primary" onclick="submitAnswer(this)">提交答案</button>
+            <button class="btn btn-plain">下一题</button>
+          </div>
+          <div class="analysis-box"><b>✅ 回答正确！</b><br><b>解析：</b>多态的三个必要条件是继承、方法重写、父类引用指向子类对象。静态方法与私有方法不能被重写，A 描述的是单继承而非多态。</div>
+        </div>
+      </div>
+
+      <div id="student-exam" class="page">
+        <div id="examMain" class="exam-layout" style="display:grid;">
+          <div>
+            <div class="card" style="margin-bottom:16px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div><h3 style="font-size:16px;">Java 程序设计 · 第二章单元测试</h3>
+                <div style="font-size:12px;color:var(--text-3);margin-top:4px;">共 10 题 · 满分 100 分 · 客观题自动判分 · 及格奖励 20 积分</div></div>
+                <span class="tag tag-orange">进行中</span>
+              </div>
+            </div>
+            <div class="question-card" style="max-width:none;">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <span class="tag tag-purple">单选题（每题 10 分）</span>
+                <span style="font-size:13px;color:var(--text-3);">第 1 / 10 题</span>
+              </div>
+              <div class="q-title">下列哪个关键字用于实现接口？</div>
+              <div class="option" onclick="examSelect(this,1)"><span class="key">A</span>extends</div>
+              <div class="option" onclick="examSelect(this,1)"><span class="key">B</span>implements</div>
+              <div class="option" onclick="examSelect(this,1)"><span class="key">C</span>abstract</div>
+              <div class="option" onclick="examSelect(this,1)"><span class="key">D</span>interface</div>
+              <div style="display:flex;justify-content:space-between;margin-top:20px;">
+                <button class="btn btn-plain">← 上一题</button>
+                <button class="btn btn-primary" onclick="alert('原型演示：实际系统中切换到下一题')">下一题 →</button>
+              </div>
+            </div>
+            <div style="margin-top:16px;text-align:center;"><button class="btn btn-primary" style="padding:10px 40px;" onclick="submitExam()">交卷</button></div>
+          </div>
+          <div>
+            <div class="exam-timer"><div class="time" id="examTimer">44:32</div><div class="label">剩余时间</div></div>
+            <div class="card">
+              <div class="card-title" style="font-size:13px;">答题卡</div>
+              <div class="q-nav" id="qNav">
+                <div class="qn current">1</div><div class="qn">2</div><div class="qn answered">3</div>
+                <div class="qn answered">4</div><div class="qn">5</div><div class="qn">6</div>
+                <div class="qn answered">7</div><div class="qn">8</div><div class="qn">9</div><div class="qn">10</div>
+              </div>
+              <div style="font-size:12px;color:var(--text-3);margin-top:12px;">已答 3 / 10 题</div>
+            </div>
+          </div>
+        </div>
+        <div class="card exam-result" id="examResult">
+          <div class="score-circle"><div class="num">90</div><div class="unit">总分 100</div></div>
+          <h3 style="font-size:18px;margin-bottom:8px;">考试完成！获得及格奖励 🔶 +20 积分</h3>
+          <div style="font-size:13px;color:var(--text-2);margin-bottom:20px;">答对 9 题 · 答错 1 题 · 用时 15 分 28 秒 · 班级排名 5/86</div>
+          <div style="display:flex;gap:10px;justify-content:center;">
+            <button class="btn btn-primary" onclick="gotoStudent('wrong')">查看错题解析</button>
+            <button class="btn btn-plain" onclick="gotoStudent('score')">查看成绩记录</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="student-wrong" class="page">
+        <div style="display:flex;gap:10px;margin-bottom:16px;">
+          <span class="tag tag-purple" style="cursor:pointer;">全部 (12)</span>
+          <span class="tag tag-gray" style="cursor:pointer;">Java 程序设计 (8)</span>
+          <span class="tag tag-gray" style="cursor:pointer;">Spring Boot (4)</span>
+        </div>
+        <div class="wrong-item">
+          <div class="q-meta"><span class="tag tag-red">单选题</span><span style="font-size:12px;color:var(--text-3);">Java 程序设计 · 第二章 · 错 2 次</span></div>
+          <div class="q-title" style="margin-top:0;">下列关于抽象类的说法，错误的是？</div>
+          <div style="font-size:13px;line-height:2;color:var(--text-2);">
+            <div>A. 抽象类不能被实例化</div>
+            <div style="color:var(--danger);">B. 抽象类中必须有抽象方法 <span class="tag tag-red">你的答案</span></div>
+            <div style="color:var(--success);">C. 抽象类可以有构造方法 <span class="tag tag-green">正确答案</span></div>
+            <div>D. 继承抽象类的子类必须实现所有抽象方法</div>
+          </div>
+          <div class="analysis-box show" style="margin-top:12px;"><b>解析：</b>抽象类可以没有抽象方法，但有抽象方法的类一定是抽象类。抽象类可以有构造方法，供子类初始化时调用。</div>
+          <div style="margin-top:12px;"><button class="btn btn-plain btn-sm" onclick="this.textContent='✓ 已掌握';this.disabled=true;">标记为已掌握</button></div>
+        </div>
+        <div class="wrong-item">
+          <div class="q-meta"><span class="tag tag-red">判断题</span><span style="font-size:12px;color:var(--text-3);">Java 程序设计 · 第三章 · 错 1 次</span></div>
+          <div class="q-title" style="margin-top:0;">HashMap 是线程安全的集合类。</div>
+          <div style="font-size:13px;line-height:2;color:var(--text-2);">
+            <div style="color:var(--danger);">正确 <span class="tag tag-red">你的答案</span></div>
+            <div style="color:var(--success);">错误 <span class="tag tag-green">正确答案</span></div>
+          </div>
+          <div class="analysis-box show" style="margin-top:12px;"><b>解析：</b>HashMap 不是线程安全的。需要线程安全时使用 ConcurrentHashMap，或用 Collections.synchronizedMap() 包装。</div>
+          <div style="margin-top:12px;"><button class="btn btn-plain btn-sm" onclick="this.textContent='✓ 已掌握';this.disabled=true;">标记为已掌握</button></div>
+        </div>
+      </div>
+
+      <div id="student-score" class="page">
+        <div class="stat-row">
+          <div class="stat-card"><div class="label">参加考试</div><div class="value">6 次</div><div class="trend">3 门课程</div></div>
+          <div class="stat-card"><div class="label">平均分</div><div class="value">86.5</div><div class="trend up">↑ 较上次 +4.2</div></div>
+          <div class="stat-card"><div class="label">最高分</div><div class="value">95</div><div class="trend">Vue 3 期中测试</div></div>
+          <div class="stat-card"><div class="label">累计错题</div><div class="value">12 题</div><div class="trend">已掌握 8 题</div></div>
+        </div>
+        <div class="card">
+          <div class="card-title">考试记录</div>
+          <table>
+            <tr><th>考试名称</th><th>课程</th><th>交卷时间</th><th>得分</th><th>排名</th><th>操作</th></tr>
+            <tr><td>第二章单元测试</td><td>Java 程序设计</td><td>2026-08-30 10:22</td><td><b style="color:var(--primary);">90</b></td><td>5/86</td><td><button class="btn btn-plain btn-sm" onclick="gotoStudent('wrong')">查看解析</button></td></tr>
+            <tr><td>第一章单元测试</td><td>Java 程序设计</td><td>2026-08-18 14:05</td><td><b style="color:var(--primary);">85</b></td><td>9/86</td><td><button class="btn btn-plain btn-sm">查看解析</button></td></tr>
+            <tr><td>期中测试</td><td>Vue 3 前端开发实战</td><td>2026-08-10 09:30</td><td><b style="color:var(--primary);">95</b></td><td>2/74</td><td><button class="btn btn-plain btn-sm">查看解析</button></td></tr>
+            <tr><td>IoC 容器专项测验</td><td>Spring Boot 企业级开发</td><td>2026-08-05 16:40</td><td><b style="color:var(--warning);">72</b></td><td>28/92</td><td><button class="btn btn-plain btn-sm">查看解析</button></td></tr>
+          </table>
+        </div>
+      </div>
+
+      <div id="student-points" class="page">
+        <div class="stat-row">
+          <div class="stat-card"><div class="label">当前可用积分</div><div class="value gold" id="myPointsBig">1,280</div><div class="trend">可兑换付费课程</div></div>
+          <div class="stat-card"><div class="label">累计获得</div><div class="value">2,180</div><div class="trend up">本月 +320</div></div>
+          <div class="stat-card"><div class="label">累计消耗</div><div class="value">900</div><div class="trend">已兑换 2 门课程</div></div>
+          <div class="stat-card"><div class="label">今日已获积分</div><div class="value">35</div><div class="trend">每日上限 100</div></div>
+        </div>
+        <div class="card">
+          <div class="card-title">积分任务 <span class="tag tag-gold">完成任务赚积分</span></div>
+          <div class="task-grid">
+            <div class="task-card"><div class="t-icon">📅</div><div class="t-name">每日签到</div><div class="t-reward">+5 积分</div><div class="t-prog">今日已完成</div><button class="btn btn-plain btn-sm" disabled>已签到</button></div>
+            <div class="task-card"><div class="t-icon">▶️</div><div class="t-name">完成 3 节课</div><div class="t-reward">+30 积分</div><div class="t-prog">进度 2/3</div><button class="btn btn-primary btn-sm" onclick="gotoStudent('study')">去学习</button></div>
+            <div class="task-card"><div class="t-icon">📝</div><div class="t-name">参加 1 次考试</div><div class="t-reward">+20 积分</div><div class="t-prog">今日已完成</div><button class="btn btn-plain btn-sm" disabled>已完成</button></div>
+            <div class="task-card"><div class="t-icon">🤖</div><div class="t-name">向 AI 提问 3 次</div><div class="t-reward">+6 积分</div><div class="t-prog">进度 1/3</div><button class="btn btn-primary btn-sm" onclick="gotoStudent('ai')">去提问</button></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">积分商城 · 兑换课程 <span class="tag tag-gold">🔶 当前 <span id="mallPoints">1,280</span> 积分</span></div>
+          <table>
+            <tr><th>课程</th><th>授课教师</th><th>所需积分</th><th>选课人数</th><th>操作</th></tr>
+            <tr><td><b>MySQL 数据库原理</b><br><span style="font-size:12px;color:var(--text-3);">数据库</span></td><td>刘老师</td><td><span class="tag tag-gold">🔶 500</span></td><td>198</td><td><button class="btn btn-gold btn-sm" onclick="redeem(this,'MySQL 数据库原理',500)">立即兑换</button></td></tr>
+            <tr><td><b>操作系统原理</b><br><span style="font-size:12px;color:var(--text-3);">计算机基础</span></td><td>赵老师</td><td><span class="tag tag-gold">🔶 300</span></td><td>145</td><td><button class="btn btn-gold btn-sm" onclick="redeem(this,'操作系统原理',300)">立即兑换</button></td></tr>
+            <tr><td><b>微服务架构实战</b><br><span style="font-size:12px;color:var(--text-3);">编程开发</span></td><td>王老师</td><td><span class="tag tag-gold">🔶 800</span></td><td>—</td><td><button class="btn btn-gold btn-sm" onclick="redeem(this,'微服务架构实战',800)">立即兑换</button></td></tr>
+          </table>
+          <div style="font-size:12px;color:var(--text-3);margin-top:12px;">说明：兑换成功后课程加入「我的课程」，积分立即扣除，不可退还。</div>
+        </div>
+        <div class="card">
+          <div class="card-title">积分明细</div>
+          <table>
+            <tr><th>时间</th><th>类型</th><th>说明</th><th>积分变动</th></tr>
+            <tr><td>2026-08-30 10:22</td><td><span class="tag tag-purple">考试奖励</span></td><td>Java 第二章测试 90 分（及格奖励）</td><td style="color:var(--success);font-weight:700;">+20</td></tr>
+            <tr><td>2026-08-29 21:15</td><td><span class="tag tag-green">完课奖励</span></td><td>完成《Java 程序设计》2.2 构造方法与重载</td><td style="color:var(--success);font-weight:700;">+10</td></tr>
+            <tr><td>2026-08-29 20:40</td><td><span class="tag tag-green">完课奖励</span></td><td>完成《Java 程序设计》2.1 类与对象</td><td style="color:var(--success);font-weight:700;">+10</td></tr>
+            <tr><td>2026-08-28 19:30</td><td><span class="tag tag-gold">课程兑换</span></td><td>兑换《Vue 高级面试冲刺》</td><td style="color:var(--danger);font-weight:700;">-600</td></tr>
+            <tr><td>2026-08-28 09:00</td><td><span class="tag tag-gray">每日签到</span></td><td>每日签到奖励</td><td style="color:var(--success);font-weight:700;">+5</td></tr>
+            <tr><td>2026-08-27 22:10</td><td><span class="tag tag-green">完课奖励</span></td><td>完成《Spring Boot》1.3 快速入门</td><td style="color:var(--success);font-weight:700;">+10</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <div id="student-ai" class="page">
+        <div class="chat-layout">
+          <div class="session-list">
+            <button class="btn btn-primary" style="width:100%;margin-bottom:12px;">+ 新建会话</button>
+            <div class="session-item active">什么是 IoC 和 DI？<div class="time">Spring Boot · 今天 14:30</div></div>
+            <div class="session-item">HashMap 的扩容机制<div class="time">Java 程序设计 · 昨天</div></div>
+            <div class="session-item">Vue 生命周期钩子<div class="time">Vue 3 实战 · 3 天前</div></div>
+          </div>
+          <div class="chat-panel">
+            <div class="chat-header">🤖 AI 智能答疑 <span class="tag tag-green" style="margin-left:8px;">当前课程：Spring Boot 企业级开发</span></div>
+            <div class="chat-messages" id="chatMessages">
+              <div class="msg user"><div class="avatar">李</div><div class="bubble">老师，什么是 IoC 和 DI？它们在 Spring Boot 里怎么用？</div></div>
+              <div class="msg ai"><div class="avatar">AI</div><div class="bubble"><b>IoC（控制反转）</b>是一种设计思想：对象的创建和依赖管理不再由你自己 new，而是交给 Spring 容器。<br><br><b>DI（依赖注入）</b>是 IoC 的实现方式，容器自动把依赖"注入"到你的类中。<br><br>在 Spring Boot 中，用 <code>@Service</code> 标注业务类，用 <code>@Autowired</code> 注入依赖即可：<br><br><code>@Service public class UserService {...}</code><br><br>这样你就不需要手动 new UserService() 了。还有疑问可以继续问我～</div></div>
+            </div>
+            <div class="chat-input">
+              <input id="chatInput" placeholder="输入你的问题，例如：@Autowired 和 @Resource 有什么区别？" onkeydown="if(event.key==='Enter')sendChat()">
+              <button class="btn btn-primary" onclick="sendChat()">发送</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="student-profile" class="page">
+        <div class="stat-row">
+          <div class="stat-card"><div class="label">累计学习时长</div><div class="value">46.5 h</div><div class="trend up">本周 +6.2h</div></div>
+          <div class="stat-card"><div class="label">在学课程</div><div class="value">3 门</div><div class="trend">已完成 1 门</div></div>
+          <div class="stat-card"><div class="label">我的积分</div><div class="value gold">1,280</div><div class="trend">点击积分中心兑换课程</div></div>
+          <div class="stat-card"><div class="label">AI 提问次数</div><div class="value">37 次</div><div class="trend">本月</div></div>
+        </div>
+        <div class="card">
+          <div class="card-title">基本资料</div>
+          <div class="form-row">
+            <div class="form-item"><label>昵称</label><input value="李同学"></div>
+            <div class="form-item"><label>学号</label><input value="2022010156" disabled></div>
+            <div class="form-item"><label>邮箱</label><input value="li@example.edu.cn"></div>
+          </div>
+          <button class="btn btn-primary">保存修改</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- ================= 教师端 ================= -->
+<div id="view-teacher" class="view">
+  <div class="layout">
+    <div class="sidebar">
+      <div class="logo"><div class="icon">AI</div>教师工作台</div>
+      <div class="menu-group">教学管理</div>
+      <div class="menu-item active" onclick="switchPage('teacher','overview',this)">📊 教学概览</div>
+      <div class="menu-item" onclick="switchPage('teacher','tcourse',this)">📚 我的课程</div>
+      <div class="menu-item" onclick="switchPage('teacher','bank',this)">🗂️ 题库管理</div>
+      <div class="menu-item" onclick="switchPage('teacher','paper',this)">📄 组卷考试</div>
+      <div class="menu-group">AI 助手</div>
+      <div class="menu-item" onclick="switchPage('teacher','gen',this)">✨ AI 智能出题</div>
+      <div class="menu-item" onclick="switchPage('teacher','grade',this)">🖊️ AI 批改</div>
+      <div class="menu-group">数据分析</div>
+      <div class="menu-item" onclick="switchPage('teacher','analytics',this)">📈 学情分析</div>
+    </div>
+    <div class="main">
+      <div class="topbar">
+        <h2 id="teacher-title">教学概览</h2>
+        <div class="user-chip"><div class="avatar" style="background:linear-gradient(135deg,#27D2BF,#22A5F7);">王</div>王老师 · 教师</div>
+      </div>
+
+      <div id="teacher-overview" class="page active">
+        <div class="stat-row">
+          <div class="stat-card"><div class="label">我的课程</div><div class="value">4 门</div><div class="trend">上架 3 · 待审核 1</div></div>
+          <div class="stat-card"><div class="label">选课学生</div><div class="value">740 人</div><div class="trend up">↑ 本月 +52</div></div>
+          <div class="stat-card"><div class="label">题库总量</div><div class="value">386 题</div><div class="trend">AI 生成 128 题</div></div>
+          <div class="stat-card"><div class="label">待批改试卷</div><div class="value">17 份</div><div class="trend down">含 9 道主观题</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+          <div class="card">
+            <div class="card-title">待办事项</div>
+            <div style="font-size:13px;line-height:2.4;color:var(--text-2);">
+              <div>🖊️ 批改《Java 程序设计》第二章测试主观题 <span class="tag tag-red">9 道</span></div>
+              <div>✅ 审核 AI 生成的题目 <span class="tag tag-orange">12 道待审</span></div>
+              <div>📄 发布第三章单元测试卷 <span class="tag tag-gray">草稿</span></div>
+              <div>💬 回复学生课程讨论 <span class="tag tag-purple">5 条</span></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">课程完课率</div>
+            <div class="bar-chart" style="height:150px;">
+              <div class="bar-col"><div class="bar-val">65%</div><div class="bar hi" style="height:65%;"></div><div class="bar-label">Java</div></div>
+              <div class="bar-col"><div class="bar-val">68%</div><div class="bar hi" style="height:68%;"></div><div class="bar-label">Spring</div></div>
+              <div class="bar-col"><div class="bar-val">52%</div><div class="bar" style="height:52%;"></div><div class="bar-label">数据结构</div></div>
+              <div class="bar-col"><div class="bar-val">44%</div><div class="bar" style="height:44%;"></div><div class="bar-label">微服务</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="teacher-tcourse" class="page">
+        <div style="margin-bottom:16px;"><button class="btn btn-primary">+ 创建新课程</button></div>
+        <div class="card">
+          <table>
+            <tr><th>课程</th><th>章节数</th><th>题库题数</th><th>选课人数</th><th>完课率</th><th>状态</th><th>操作</th></tr>
+            <tr><td><b>Java 程序设计</b><br><span style="font-size:12px;color:var(--text-3);">编程开发</span></td><td>3 章 / 30 节</td><td>145</td><td>328</td><td>65%</td><td><span class="tag tag-green">已上架</span></td><td><button class="btn btn-plain btn-sm">编辑章节</button> <button class="btn btn-plain btn-sm" onclick="gotoTeacher('bank')">题库</button></td></tr>
+            <tr><td><b>Spring Boot 企业级开发</b><br><span style="font-size:12px;color:var(--text-3);">编程开发</span></td><td>4 章 / 24 节</td><td>132</td><td>412</td><td>68%</td><td><span class="tag tag-green">已上架</span></td><td><button class="btn btn-plain btn-sm">编辑章节</button> <button class="btn btn-plain btn-sm" onclick="gotoTeacher('bank')">题库</button></td></tr>
+            <tr><td><b>微服务架构实战</b><br><span style="font-size:12px;color:var(--text-3);">编程开发</span></td><td>5 章 / 26 节</td><td>0</td><td>—</td><td>—</td><td><span class="tag tag-orange">待审核</span></td><td><button class="btn btn-plain btn-sm">编辑章节</button></td></tr>
+          </table>
+        </div>
+        <div class="info-note">📌 课程与题库关系：每门课程拥有独立题库，题目按「课程 → 章节」两级归属。在「题库管理」中按课程查看，在「AI 出题」中按章节生成，在「组卷考试」中按课程抽题。</div>
+      </div>
+
+      <div id="teacher-bank" class="page">
+        <div class="crumb">题库管理 / <b>Java 程序设计</b> / 共 145 题</div>
+        <div class="card">
+          <div class="card-title">
+            <span>选择题库</span>
+            <div style="display:flex;gap:8px;">
+              <select style="border:1px solid var(--border);border-radius:8px;padding:7px 12px;font-size:13px;outline:none;">
+                <option>Java 程序设计</option><option>Spring Boot 企业级开发</option><option>微服务架构实战</option>
+              </select>
+              <button class="btn btn-primary btn-sm" onclick="gotoTeacher('gen')">✨ AI 出题</button>
+              <button class="btn btn-plain btn-sm">+ 手动录入</button>
+            </div>
+          </div>
+          <div class="chap-tabs">
+            <div class="chap-tab active">全部 (145)</div>
+            <div class="chap-tab">第一章 Java 基础 (42)</div>
+            <div class="chap-tab">第二章 面向对象编程 (68)</div>
+            <div class="chap-tab">第三章 集合框架 (35)</div>
+          </div>
+          <table>
+            <tr><th style="width:42%;">题干</th><th>题型</th><th>所属章节</th><th>难度</th><th>来源</th><th>正确率</th><th>操作</th></tr>
+            <tr><td>关于 Java 中的多态，下列说法正确的是？</td><td><span class="tag tag-purple">单选</span></td><td>第二章 2.3 继承与多态</td><td><span class="tag tag-orange">中等</span></td><td><span class="tag tag-gray">人工</span></td><td>76%</td><td><button class="btn btn-plain btn-sm">编辑</button> <button class="btn btn-danger btn-sm">删除</button></td></tr>
+            <tr><td>下列哪个关键字用于实现接口？</td><td><span class="tag tag-purple">单选</span></td><td>第二章 2.4 抽象类与接口</td><td><span class="tag tag-green">简单</span></td><td><span class="tag tag-green">AI 生成</span></td><td>89%</td><td><button class="btn btn-plain btn-sm">编辑</button> <button class="btn btn-danger btn-sm">删除</button></td></tr>
+            <tr><td>HashMap 是线程安全的集合类。</td><td><span class="tag tag-orange">判断</span></td><td>第三章 3.2 HashMap 原理</td><td><span class="tag tag-orange">中等</span></td><td><span class="tag tag-green">AI 生成</span></td><td>62%</td><td><button class="btn btn-plain btn-sm">编辑</button> <button class="btn btn-danger btn-sm">删除</button></td></tr>
+            <tr><td>请简述 ArrayList 和 LinkedList 的区别及使用场景。</td><td><span class="tag tag-red">简答</span></td><td>第三章 3.1 List 与 ArrayList</td><td><span class="tag tag-red">困难</span></td><td><span class="tag tag-gray">人工</span></td><td>—</td><td><button class="btn btn-plain btn-sm">编辑</button> <button class="btn btn-danger btn-sm">删除</button></td></tr>
+            <tr><td>以下哪些属于面向对象的特性？</td><td><span class="tag tag-purple">多选</span></td><td>第二章 2.1 类与对象</td><td><span class="tag tag-orange">中等</span></td><td><span class="tag tag-gray">人工</span></td><td>71%</td><td><button class="btn btn-plain btn-sm">编辑</button> <button class="btn btn-danger btn-sm">删除</button></td></tr>
+          </table>
+        </div>
+        <div class="info-note">📌 题目归属说明：每道题必须绑定到具体课程的某一节。AI 生成的题目经教师审核「通过入库」后，自动归入所选课程对应章节；组卷时仅能从该课程题库中抽题，保证考试内容与教学内容一致。</div>
+      </div>
+
+      <div id="teacher-paper" class="page">
+        <div class="card">
+          <div class="card-title">创建试卷</div>
+          <div class="form-row">
+            <div class="form-item"><label>试卷名称</label><input value="Java 程序设计 · 第三章单元测试"></div>
+            <div class="form-item"><label>所属课程（决定抽题范围）</label><select><option>Java 程序设计</option><option>Spring Boot 企业级开发</option></select></div>
+            <div class="form-item"><label>考试时长（分钟）</label><input value="45"></div>
+          </div>
+          <div class="card-title" style="font-size:13px;margin-top:8px;">按章节 + 题型抽题（仅从《Java 程序设计》题库抽取）</div>
+          <div class="form-row">
+            <div class="form-item"><label>抽题章节</label><select><option>第三章 集合框架</option><option>全课程随机</option></select></div>
+            <div class="form-item"><label>单选题 × 每题 5 分</label><input value="6"></div>
+            <div class="form-item"><label>多选题 × 每题 10 分</label><input value="2"></div>
+            <div class="form-item"><label>判断题 × 每题 5 分</label><input value="4"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-item"><label>简答题 × 每题 20 分（AI 批改）</label><input value="1"></div>
+            <div class="form-item"><label>及格分数</label><input value="60"></div>
+            <div class="form-item"><label>及格奖励积分</label><input value="20"></div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <button class="btn btn-primary" onclick="alert('原型演示：实际系统从《Java 程序设计》第三章题库按题型随机抽题生成试卷')">🎲 随机组卷</button>
+            <button class="btn btn-plain">手动挑题</button>
+            <span style="font-size:12px;color:var(--text-3);">预计总分：110 分</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">已发布试卷</div>
+          <table>
+            <tr><th>试卷名称</th><th>所属课程</th><th>题目数</th><th>参考人数</th><th>平均分</th><th>状态</th><th>操作</th></tr>
+            <tr><td>第二章单元测试</td><td>Java 程序设计</td><td>10</td><td>86</td><td>82.4</td><td><span class="tag tag-green">进行中</span></td><td><button class="btn btn-plain btn-sm">成绩</button> <button class="btn btn-danger btn-sm">结束</button></td></tr>
+            <tr><td>第一章单元测试</td><td>Java 程序设计</td><td>10</td><td>86</td><td>79.8</td><td><span class="tag tag-gray">已结束</span></td><td><button class="btn btn-plain btn-sm">成绩</button></td></tr>
+          </table>
+        </div>
+      </div>
+
+      <div id="teacher-gen" class="page">
+        <div class="gen-layout">
+          <div class="card" style="margin-bottom:0;">
+            <div class="card-title">✨ AI 出题设置</div>
+            <div class="form-item" style="margin-bottom:12px;">
+              <label>所属课程</label>
+              <select><option>Java 程序设计</option><option>Spring Boot 企业级开发</option></select>
+            </div>
+            <div class="form-item" style="margin-bottom:12px;">
+              <label>归属章节（题目入库位置）</label>
+              <select><option>第三章 集合框架 / 3.2 HashMap 原理</option><option>第三章 集合框架 / 3.1 List 与 ArrayList</option><option>第二章 面向对象编程 / 2.3 继承与多态</option></select>
+            </div>
+            <div class="form-item" style="margin-bottom:12px;">
+              <label>知识点描述</label>
+              <textarea rows="3">HashMap 的底层原理：数组+链表+红黑树、哈希冲突解决、put 流程、扩容机制</textarea>
+            </div>
+            <div class="form-row">
+              <div class="form-item"><label>题型</label><select><option>单选题</option><option>多选题</option><option>判断题</option></select></div>
+              <div class="form-item"><label>数量</label><select><option>3 道</option><option>5 道</option><option>8 道</option></select></div>
+            </div>
+            <div class="form-item" style="margin-bottom:16px;"><label>难度</label><select><option>中等</option><option>简单</option><option>困难</option></select></div>
+            <button class="btn btn-primary" style="width:100%;" id="genBtn" onclick="generateQuestions()">✨ 生成题目</button>
+            <div style="font-size:12px;color:var(--text-3);margin-top:12px;line-height:1.7;">说明：题目生成后需教师审核，「通过入库」将保存到所选课程的对应章节题库中。</div>
+          </div>
+          <div>
+            <div class="ai-loading" id="genLoading"><div class="spinner"></div>AI 正在根据知识点生成题目，请稍候…</div>
+            <div id="genResult"></div>
+            <div id="genEmpty" class="card" style="text-align:center;color:var(--text-3);font-size:13px;padding:60px 20px;">设置左侧课程、章节和知识点后点击「生成题目」<br>AI 将自动生成带答案和解析的题目，审核通过后归入对应章节题库</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="teacher-grade" class="page">
+        <div class="card" style="margin-bottom:16px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div><h3 style="font-size:15px;">第二章单元测试 · 简答题批改</h3>
+            <div style="font-size:12px;color:var(--text-3);margin-top:4px;">《Java 程序设计》· 题目：请简述 ArrayList 和 LinkedList 的区别及使用场景（20 分）· 共 9 份待批改</div></div>
+            <button class="btn btn-primary" onclick="gradeAll()">🤖 一键 AI 批改全部</button>
+          </div>
+        </div>
+        <div class="grade-card">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <b style="font-size:14px;">李同学 <span class="tag tag-gray" style="margin-left:6px;">提交于 10:22</span></b>
+            <span id="gradeStatus1" class="tag tag-orange">待批改</span>
+          </div>
+          <div class="grade-answer">ArrayList 基于动态数组实现，支持随机访问，get 操作是 O(1) 的，适合查询多的场景；LinkedList 基于双向链表，插入删除只需要改指针，适合频繁增删的场景。不过 LinkedList 查询要遍历链表，是 O(n) 的。另外 ArrayList 扩容是 1.5 倍。</div>
+          <div style="display:flex;gap:10px;"><button class="btn btn-primary btn-sm" onclick="aiGrade(1)">🤖 AI 批改</button></div>
+          <div class="ai-grade-result" id="gradeResult1">
+            <div class="ai-score-line"><span class="ai-score-badge" id="gradeScore1">—</span><span class="tag tag-purple">AI 评分</span><span style="font-size:12px;color:var(--text-3);">参考答案要点：底层结构 / 时间复杂度 / 适用场景 / 内存开销</span></div>
+            <div class="ai-comment" id="gradeComment1"></div>
+            <div style="display:flex;gap:10px;margin-top:12px;"><button class="btn btn-success btn-sm" onclick="confirmGrade(1)">✓ 采纳评分</button><button class="btn btn-plain btn-sm">手动改分</button></div>
+          </div>
+        </div>
+        <div class="grade-card">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <b style="font-size:14px;">张同学 <span class="tag tag-gray" style="margin-left:6px;">提交于 10:25</span></b>
+            <span id="gradeStatus2" class="tag tag-orange">待批改</span>
+          </div>
+          <div class="grade-answer">ArrayList 是数组，LinkedList 是链表。ArrayList 查询快，LinkedList 增删快。</div>
+          <div style="display:flex;gap:10px;"><button class="btn btn-primary btn-sm" onclick="aiGrade(2)">🤖 AI 批改</button></div>
+          <div class="ai-grade-result" id="gradeResult2">
+            <div class="ai-score-line"><span class="ai-score-badge" id="gradeScore2">—</span><span class="tag tag-purple">AI 评分</span><span style="font-size:12px;color:var(--text-3);">参考答案要点：底层结构 / 时间复杂度 / 适用场景 / 内存开销</span></div>
+            <div class="ai-comment" id="gradeComment2"></div>
+            <div style="display:flex;gap:10px;margin-top:12px;"><button class="btn btn-success btn-sm" onclick="confirmGrade(2)">✓ 采纳评分</button><button class="btn btn-plain btn-sm">手动改分</button></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="teacher-analytics" class="page">
+        <div class="stat-row">
+          <div class="stat-card"><div class="label">本周活跃学生</div><div class="value">296</div><div class="trend up">↑ 9.6%</div></div>
+          <div class="stat-card"><div class="label">平均完课率</div><div class="value">65%</div><div class="trend up">↑ 3%</div></div>
+          <div class="stat-card"><div class="label">练习平均正确率</div><div class="value">74.2%</div><div class="trend down">↓ 1.8%</div></div>
+          <div class="stat-card"><div class="label">AI 答疑使用率</div><div class="value">58%</div><div class="trend up">↑ 12%</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+          <div class="card">
+            <div class="card-title">各章节完课率 · Java 程序设计</div>
+            <div class="bar-chart">
+              <div class="bar-col"><div class="bar-val">92%</div><div class="bar hi" style="height:92%;"></div><div class="bar-label">第一章</div></div>
+              <div class="bar-col"><div class="bar-val">78%</div><div class="bar hi" style="height:78%;"></div><div class="bar-label">第二章</div></div>
+              <div class="bar-col"><div class="bar-val">45%</div><div class="bar" style="height:45%;"></div><div class="bar-label">第三章</div></div>
+              <div class="bar-col"><div class="bar-val">12%</div><div class="bar" style="height:12%;"></div><div class="bar-label">第四章</div></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">易错题 TOP 3（建议课堂讲解）</div>
+            <table>
+              <tr><th>题目</th><th>正确率</th></tr>
+              <tr><td>HashMap 是线程安全的集合类（判断）</td><td><span class="tag tag-red">38%</span></td></tr>
+              <tr><td>下列关于抽象类的说法，错误的是（单选）</td><td><span class="tag tag-red">46%</span></td></tr>
+              <tr><td>以下哪些属于面向对象的特性（多选）</td><td><span class="tag tag-orange">58%</span></td></tr>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">学生学习明细 · Java 程序设计</div>
+          <table>
+            <tr><th>学生</th><th>完课率</th><th>练习正确率</th><th>考试成绩</th><th>AI 提问</th><th>学习状态</th></tr>
+            <tr><td>李同学</td><td>40%</td><td>82%</td><td>90</td><td>37 次</td><td><span class="tag tag-green">积极</span></td></tr>
+            <tr><td>张同学</td><td>68%</td><td>75%</td><td>85</td><td>21 次</td><td><span class="tag tag-green">积极</span></td></tr>
+            <tr><td>赵同学</td><td>22%</td><td>58%</td><td>62</td><td>3 次</td><td><span class="tag tag-red">需关注</span></td></tr>
+            <tr><td>刘同学</td><td>35%</td><td>66%</td><td>71</td><td>12 次</td><td><span class="tag tag-orange">一般</span></td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- ================= 管理端 ================= -->
+<div id="view-admin" class="view">
+  <div class="layout">
+    <div class="sidebar">
+      <div class="logo"><div class="icon">AI</div>管理后台</div>
+      <div class="menu-group">运营</div>
+      <div class="menu-item active" onclick="switchPage('admin','dashboard',this)">📊 数据看板</div>
+      <div class="menu-item" onclick="switchPage('admin','audit',this)">✅ 课程审核</div>
+      <div class="menu-item" onclick="switchPage('admin','courses',this)">📚 课程管理</div>
+      <div class="menu-item" onclick="switchPage('admin','notice',this)">📢 公告管理</div>
+      <div class="menu-item" onclick="switchPage('admin','comment',this)">💬 评论管理</div>
+      <div class="menu-group">积分运营</div>
+      <div class="menu-item" onclick="switchPage('admin','pointsrule',this)">⚙️ 积分规则</div>
+      <div class="menu-item" onclick="switchPage('admin','exchange',this)">🔁 兑换记录</div>
+      <div class="menu-group">系统</div>
+      <div class="menu-item" onclick="switchPage('admin','users',this)">👥 用户管理</div>
+      <div class="menu-item" onclick="switchPage('admin','aiusage',this)">🤖 AI 用量统计</div>
+      <div class="menu-item" onclick="switchPage('admin','settings',this)">🛠️ 系统设置</div>
+    </div>
+    <div class="main">
+      <div class="topbar">
+        <h2 id="admin-title">数据看板</h2>
+        <div class="user-chip"><div class="avatar" style="background:linear-gradient(135deg,#F87454,#EFAA17);">管</div>管理员</div>
+      </div>
+
+      <div id="admin-dashboard" class="page active">
+        <div class="stat-row">
+          <div class="stat-card"><div class="label">注册用户总数</div><div class="value">1,286</div><div class="trend up">↑ 本月新增 86</div></div>
+          <div class="stat-card"><div class="label">上架课程数</div><div class="value">42</div><div class="trend up">↑ 待审核 3</div></div>
+          <div class="stat-card"><div class="label">今日活跃学习</div><div class="value">356</div><div class="trend up">↑ 12.5%</div></div>
+          <div class="stat-card"><div class="label">AI 调用次数（今日）</div><div class="value">892</div><div class="trend">答疑 612 · 出题 180 · 批改 100</div></div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-card"><div class="label">今日发放积分</div><div class="value gold">8,420</div><div class="trend up">↑ 15%</div></div>
+          <div class="stat-card"><div class="label">今日兑换课程</div><div class="value">23 门</div><div class="trend">消耗 9,600 积分</div></div>
+          <div class="stat-card"><div class="label">积分兑换课程占比</div><div class="value">18%</div><div class="trend">付费课程选课来源</div></div>
+          <div class="stat-card"><div class="label">待处理事项</div><div class="value">7</div><div class="trend down">审核 3 · 举报 2 · 评论 2</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+          <div class="card">
+            <div class="card-title">课程热度排行</div>
+            <table>
+              <tr><th>排名</th><th>课程</th><th>选课人数</th><th>完课率</th></tr>
+              <tr><td>1</td><td>Spring Boot 企业级开发</td><td>412</td><td>68%</td></tr>
+              <tr><td>2</td><td>Vue 3 前端开发实战</td><td>367</td><td>72%</td></tr>
+              <tr><td>3</td><td>Java 程序设计</td><td>328</td><td>65%</td></tr>
+              <tr><td>4</td><td>数据结构与算法</td><td>256</td><td>58%</td></tr>
+            </table>
+          </div>
+          <div class="card">
+            <div class="card-title">近 7 日用户增长</div>
+            <div class="bar-chart">
+              <div class="bar-col"><div class="bar" style="height:42%;"></div><div class="bar-label">周一</div></div>
+              <div class="bar-col"><div class="bar" style="height:60%;"></div><div class="bar-label">周二</div></div>
+              <div class="bar-col"><div class="bar" style="height:50%;"></div><div class="bar-label">周三</div></div>
+              <div class="bar-col"><div class="bar" style="height:78%;"></div><div class="bar-label">周四</div></div>
+              <div class="bar-col"><div class="bar" style="height:66%;"></div><div class="bar-label">周五</div></div>
+              <div class="bar-col"><div class="bar hi" style="height:100%;"></div><div class="bar-label">周六</div></div>
+              <div class="bar-col"><div class="bar" style="height:88%;"></div><div class="bar-label">周日</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="admin-audit" class="page">
+        <div class="card">
+          <div class="card-title">待审核课程 <span class="tag tag-orange">3 门待审</span></div>
+          <table>
+            <tr><th>课程名称</th><th>授课教师</th><th>分类</th><th>章节数</th><th>提交时间</th><th>操作</th></tr>
+            <tr><td>Python 数据分析入门</td><td>刘老师</td><td>数据分析</td><td>18 节</td><td>2026-08-28</td><td><button class="btn btn-plain btn-sm">预览</button> <button class="btn btn-success btn-sm" onclick="auditRow(this,'通过')">通过</button> <button class="btn btn-danger btn-sm" onclick="auditRow(this,'驳回')">驳回</button></td></tr>
+            <tr><td>计算机网络基础</td><td>赵老师</td><td>计算机基础</td><td>22 节</td><td>2026-08-29</td><td><button class="btn btn-plain btn-sm">预览</button> <button class="btn btn-success btn-sm" onclick="auditRow(this,'通过')">通过</button> <button class="btn btn-danger btn-sm" onclick="auditRow(this,'驳回')">驳回</button></td></tr>
+            <tr><td>微服务架构实战</td><td>王老师</td><td>编程开发</td><td>26 节</td><td>2026-08-30</td><td><button class="btn btn-plain btn-sm">预览</button> <button class="btn btn-success btn-sm" onclick="auditRow(this,'通过')">通过</button> <button class="btn btn-danger btn-sm" onclick="auditRow(this,'驳回')">驳回</button></td></tr>
+          </table>
+        </div>
+      </div>
+
+      <div id="admin-courses" class="page">
+        <div class="card">
+          <div class="card-title"><span>全部课程</span><span class="tag tag-gray">共 42 门</span></div>
+          <table>
+            <tr><th>课程名称</th><th>授课教师</th><th>类型</th><th>积分定价</th><th>选课人数</th><th>完课率</th><th>状态</th><th>操作</th></tr>
+            <tr><td>Spring Boot 企业级开发</td><td>王老师</td><td><span class="tag tag-gray">免费</span></td><td>—</td><td>412</td><td>68%</td><td><span class="tag tag-green">已上架</span></td><td><button class="btn btn-plain btn-sm">详情</button> <button class="btn btn-danger btn-sm">下架</button></td></tr>
+            <tr><td>Vue 3 前端开发实战</td><td>陈老师</td><td><span class="tag tag-gray">免费</span></td><td>—</td><td>367</td><td>72%</td><td><span class="tag tag-green">已上架</span></td><td><button class="btn btn-plain btn-sm">详情</button> <button class="btn btn-danger btn-sm">下架</button></td></tr>
+            <tr><td>MySQL 数据库原理</td><td>刘老师</td><td><span class="tag tag-gold">积分兑换</span></td><td>🔶 500</td><td>198</td><td>61%</td><td><span class="tag tag-green">已上架</span></td><td><button class="btn btn-plain btn-sm">详情</button> <button class="btn btn-danger btn-sm">下架</button></td></tr>
+            <tr><td>操作系统原理</td><td>赵老师</td><td><span class="tag tag-gold">积分兑换</span></td><td>🔶 300</td><td>145</td><td>51%</td><td><span class="tag tag-gray">已下架</span></td><td><button class="btn btn-plain btn-sm">详情</button> <button class="btn btn-success btn-sm">上架</button></td></tr>
+          </table>
+        </div>
+      </div>
+
+      <div id="admin-notice" class="page">
+        <div class="card">
+          <div class="card-title">发布公告</div>
+          <div class="form-row">
+            <div class="form-item" style="flex:2;"><label>公告标题</label><input placeholder="例如：关于平台积分规则调整的通知"></div>
+            <div class="form-item"><label>类型</label><select><option>系统通知</option><option>活动公告</option><option>课程上新</option></select></div>
+            <div class="form-item" style="flex:0 0 110px;"><label>是否置顶</label><select><option>否</option><option>是</option></select></div>
+          </div>
+          <div class="form-item" style="margin-bottom:14px;"><label>公告内容</label><textarea rows="3" placeholder="输入公告内容…"></textarea></div>
+          <button class="btn btn-primary">📢 立即发布</button>
+        </div>
+        <div class="card">
+          <div class="card-title">公告列表</div>
+          <table>
+            <tr><th>标题</th><th>类型</th><th>发布时间</th><th>置顶</th><th>状态</th><th>操作</th></tr>
+            <tr><td>新学期课程上新：微服务架构实战</td><td><span class="tag tag-purple">课程上新</span></td><td>2026-08-29 10:00</td><td><span class="tag tag-orange">置顶</span></td><td><span class="tag tag-green">已发布</span></td><td><button class="btn btn-plain btn-sm">编辑</button> <button class="btn btn-danger btn-sm">撤回</button></td></tr>
+            <tr><td>积分商城上线，看课即可兑换课程</td><td><span class="tag tag-gold">活动公告</span></td><td>2026-08-25 09:30</td><td><span class="tag tag-gray">否</span></td><td><span class="tag tag-green">已发布</span></td><td><button class="btn btn-plain btn-sm">编辑</button> <button class="btn btn-danger btn-sm">撤回</button></td></tr>
+            <tr><td>平台维护通知（8 月 20 日凌晨）</td><td><span class="tag tag-gray">系统通知</span></td><td>2026-08-18 16:00</td><td><span class="tag tag-gray">否</span></td><td><span class="tag tag-gray">已撤回</span></td><td><button class="btn btn-plain btn-sm">编辑</button> <button class="btn btn-success btn-sm">重新发布</button></td></tr>
+          </table>
+        </div>
+      </div>
+
+      <div id="admin-comment" class="page">
+        <div class="card">
+          <div class="card-title">课程评论审核 <span class="tag tag-orange">2 条待处理</span></div>
+          <table>
+            <tr><th>评论用户</th><th>所属课程</th><th>评论内容</th><th>时间</th><th>状态</th><th>操作</th></tr>
+            <tr><td>李同学</td><td>Java 程序设计</td><td>老师讲得很清楚，AI 答疑特别好用，推荐！</td><td>2026-08-30 09:12</td><td><span class="tag tag-green">已展示</span></td><td><button class="btn btn-plain btn-sm">隐藏</button> <button class="btn btn-danger btn-sm">删除</button></td></tr>
+            <tr><td>赵同学</td><td>Spring Boot 企业级开发</td><td>（疑似广告内容，已被系统标记）加微信领资料…</td><td>2026-08-30 08:45</td><td><span class="tag tag-red">待审核</span></td><td><button class="btn btn-success btn-sm">通过</button> <button class="btn btn-danger btn-sm">删除</button></td></tr>
+            <tr><td>刘同学</td><td>Vue 3 前端开发实战</td><td>（被举报：言语不当）</td><td>2026-08-29 22:30</td><td><span class="tag tag-red">待审核</span></td><td><button class="btn btn-success btn-sm">通过</button> <button class="btn btn-danger btn-sm">删除</button></td></tr>
+            <tr><td>张同学</td><td>数据结构与算法</td><td>第三章的例题能不能再多一点？</td><td>2026-08-29 20:15</td><td><span class="tag tag-green">已展示</span></td><td><button class="btn btn-plain btn-sm">隐藏</button> <button class="btn btn-danger btn-sm">删除</button></td></tr>
+          </table>
+        </div>
+      </div>
+
+      <div id="admin-pointsrule" class="page">
+        <div class="card">
+          <div class="card-title">积分获取规则</div>
+          <div class="form-row">
+            <div class="form-item"><label>每完成 1 节视频奖励</label><input value="10"></div>
+            <div class="form-item"><label>每日获取上限</label><input value="100"></div>
+            <div class="form-item"><label>每日签到奖励</label><input value="5"></div>
+            <div class="form-item"><label>考试及格奖励</label><input value="20"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-item"><label>新用户注册赠送</label><input value="100"></div>
+            <div class="form-item"><label>AI 提问奖励（每日首次）</label><input value="2"></div>
+            <div class="form-item"><label>完课任务（每日 3 节）</label><input value="30"></div>
+            <div class="form-item"><label>是否启用积分系统</label><select><option>启用</option><option>停用</option></select></div>
+          </div>
+          <button class="btn btn-primary">保存规则</button>
+        </div>
+        <div class="card">
+          <div class="card-title">积分兑换课程定价</div>
+          <table>
+            <tr><th>课程</th><th>授课教师</th><th>类型</th><th>所需积分</th><th>已兑换人次</th><th>操作</th></tr>
+            <tr><td>MySQL 数据库原理</td><td>刘老师</td><td><span class="tag tag-gold">积分兑换</span></td><td><input value="500" style="width:80px;border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-size:13px;"></td><td>64</td><td><button class="btn btn-plain btn-sm">保存</button> <button class="btn btn-plain btn-sm">改为免费</button></td></tr>
+            <tr><td>操作系统原理</td><td>赵老师</td><td><span class="tag tag-gold">积分兑换</span></td><td><input value="300" style="width:80px;border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-size:13px;"></td><td>38</td><td><button class="btn btn-plain btn-sm">保存</button> <button class="btn btn-plain btn-sm">改为免费</button></td></tr>
+            <tr><td>微服务架构实战</td><td>王老师</td><td><span class="tag tag-gold">积分兑换</span></td><td><input value="800" style="width:80px;border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-size:13px;"></td><td>12</td><td><button class="btn btn-plain btn-sm">保存</button> <button class="btn btn-plain btn-sm">改为免费</button></td></tr>
+          </table>
+        </div>
+      </div>
+
+      <div id="admin-exchange" class="page">
+        <div class="stat-row">
+          <div class="stat-card"><div class="label">累计兑换人次</div><div class="value">114</div><div class="trend up">本月 +32</div></div>
+          <div class="stat-card"><div class="label">累计消耗积分</div><div class="value gold">52,300</div><div class="trend">平台积分回收</div></div>
+          <div class="stat-card"><div class="label">热门兑换课程</div><div class="value" style="font-size:18px;line-height:1.4;">MySQL 数据库原理</div><div class="trend">64 人次</div></div>
+          <div class="stat-card"><div class="label">今日兑换</div><div class="value">23</div><div class="trend up">↑ 15%</div></div>
+        </div>
+        <div class="card">
+          <div class="card-title">兑换记录明细</div>
+          <table>
+            <tr><th>记录号</th><th>学生</th><th>兑换课程</th><th>消耗积分</th><th>兑换时间</th><th>状态</th></tr>
+            <tr><td>#20260830-023</td><td>李同学</td><td>MySQL 数据库原理</td><td style="color:var(--danger);font-weight:700;">-500</td><td>2026-08-30 11:02</td><td><span class="tag tag-green">成功</span></td></tr>
+            <tr><td>#20260830-022</td><td>张同学</td><td>操作系统原理</td><td style="color:var(--danger);font-weight:700;">-300</td><td>2026-08-30 10:48</td><td><span class="tag tag-green">成功</span></td></tr>
+            <tr><td>#20260830-021</td><td>刘同学</td><td>微服务架构实战</td><td style="color:var(--danger);font-weight:700;">-800</td><td>2026-08-30 09:35</td><td><span class="tag tag-green">成功</span></td></tr>
+            <tr><td>#20260829-020</td><td>赵同学</td><td>MySQL 数据库原理</td><td style="color:var(--danger);font-weight:700;">-500</td><td>2026-08-29 21:18</td><td><span class="tag tag-green">成功</span></td></tr>
+            <tr><td>#20260829-019</td><td>孙同学</td><td>操作系统原理</td><td style="color:var(--text-3);">0</td><td>2026-08-29 19:50</td><td><span class="tag tag-red">积分不足失败</span></td></tr>
+          </table>
+          <div style="display:flex;justify-content:flex-end;gap:6px;margin-top:16px;font-size:13px;">
+            <button class="btn btn-plain btn-sm">上一页</button><button class="btn btn-primary btn-sm">1</button><button class="btn btn-plain btn-sm">2</button><button class="btn btn-plain btn-sm">3</button><button class="btn btn-plain btn-sm">下一页</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="admin-users" class="page">
+        <div class="card">
+          <div class="card-title">
+            <span>用户列表</span>
+            <div style="display:flex;gap:8px;">
+              <input placeholder="搜索用户名 / 昵称" style="border:1px solid var(--border);border-radius:8px;padding:7px 12px;font-size:13px;width:200px;outline:none;">
+              <select style="border:1px solid var(--border);border-radius:8px;padding:7px 12px;font-size:13px;outline:none;"><option>全部角色</option><option>学生</option><option>教师</option></select>
+            </div>
+          </div>
+          <table>
+            <tr><th>ID</th><th>用户名</th><th>昵称</th><th>角色</th><th>积分</th><th>注册时间</th><th>状态</th><th>操作</th></tr>
+            <tr><td>1001</td><td>li2022</td><td>李同学</td><td><span class="tag tag-purple">学生</span></td><td>🔶 1,280</td><td>2026-03-12</td><td><span class="tag tag-green">正常</span></td><td><button class="btn btn-plain btn-sm">编辑</button> <button class="btn btn-danger btn-sm">禁用</button></td></tr>
+            <tr><td>1002</td><td>wang_teacher</td><td>王老师</td><td><span class="tag tag-orange">教师</span></td><td>—</td><td>2026-02-08</td><td><span class="tag tag-green">正常</span></td><td><button class="btn btn-plain btn-sm">编辑</button> <button class="btn btn-danger btn-sm">禁用</button></td></tr>
+            <tr><td>1003</td><td>zhang99</td><td>张同学</td><td><span class="tag tag-purple">学生</span></td><td>🔶 860</td><td>2026-04-21</td><td><span class="tag tag-green">正常</span></td><td><button class="btn btn-plain btn-sm">编辑</button> <button class="btn btn-danger btn-sm">禁用</button></td></tr>
+            <tr><td>1004</td><td>chen_vue</td><td>陈老师</td><td><span class="tag tag-orange">教师</span></td><td>—</td><td>2026-01-15</td><td><span class="tag tag-red">已禁用</span></td><td><button class="btn btn-plain btn-sm">编辑</button> <button class="btn btn-success btn-sm">启用</button></td></tr>
+            <tr><td>1005</td><td>zhao2023</td><td>赵同学</td><td><span class="tag tag-purple">学生</span></td><td>🔶 210</td><td>2026-05-02</td><td><span class="tag tag-green">正常</span></td><td><button class="btn btn-plain btn-sm">编辑</button> <button class="btn btn-danger btn-sm">禁用</button></td></tr>
+          </table>
+          <div style="display:flex;justify-content:flex-end;gap:6px;margin-top:16px;font-size:13px;">
+            <button class="btn btn-plain btn-sm">上一页</button><button class="btn btn-primary btn-sm">1</button><button class="btn btn-plain btn-sm">2</button><button class="btn btn-plain btn-sm">3</button><button class="btn btn-plain btn-sm">下一页</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="admin-aiusage" class="page">
+        <div class="stat-row">
+          <div class="stat-card"><div class="label">本月总调用</div><div class="value">18,462</div><div class="trend up">↑ 23% 环比</div></div>
+          <div class="stat-card"><div class="label">智能答疑</div><div class="value">12,038</div><div class="trend">占 65.2%</div></div>
+          <div class="stat-card"><div class="label">智能出题</div><div class="value">3,890</div><div class="trend">占 21.1%</div></div>
+          <div class="stat-card"><div class="label">智能批改</div><div class="value">2,534</div><div class="trend">占 13.7%</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+          <div class="card">
+            <div class="card-title">近 7 日 AI 调用量</div>
+            <div class="bar-chart">
+              <div class="bar-col"><div class="bar-val">620</div><div class="bar" style="height:52%;"></div><div class="bar-label">周一</div></div>
+              <div class="bar-col"><div class="bar-val">780</div><div class="bar" style="height:65%;"></div><div class="bar-label">周二</div></div>
+              <div class="bar-col"><div class="bar-val">705</div><div class="bar" style="height:59%;"></div><div class="bar-label">周三</div></div>
+              <div class="bar-col"><div class="bar-val">860</div><div class="bar" style="height:72%;"></div><div class="bar-label">周四</div></div>
+              <div class="bar-col"><div class="bar-val">812</div><div class="bar" style="height:68%;"></div><div class="bar-label">周五</div></div>
+              <div class="bar-col"><div class="bar-val">1,195</div><div class="bar hi" style="height:100%;"></div><div class="bar-label">周六</div></div>
+              <div class="bar-col"><div class="bar-val">1,024</div><div class="bar" style="height:86%;"></div><div class="bar-label">周日</div></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">模型配置与成本</div>
+            <table>
+              <tr><th>配置项</th><th>当前值</th></tr>
+              <tr><td>接入模型</td><td>glm-4-flash（智谱）</td></tr>
+              <tr><td>接入方式</td><td>OpenAI 兼容接口 · Spring AI</td></tr>
+              <tr><td>本月 Token 消耗</td><td>约 920 万</td></tr>
+              <tr><td>本月费用</td><td>¥ 0（免费额度内）</td></tr>
+              <tr><td>单次答疑平均耗时</td><td>2.3 s（首字 0.8 s）</td></tr>
+              <tr><td>调用失败率</td><td>0.4%（自动降级提示）</td></tr>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="admin-settings" class="page">
+        <div class="card">
+          <div class="card-title">AI 功能开关</div>
+          <table>
+            <tr><th>功能</th><th>说明</th><th>状态</th></tr>
+            <tr><td>AI 智能答疑</td><td>学生端对话式答疑（流式输出）</td><td><select style="border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:13px;"><option>开启</option><option>关闭</option></select></td></tr>
+            <tr><td>AI 智能出题</td><td>教师端按知识点生成题目</td><td><select style="border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:13px;"><option>开启</option><option>关闭</option></select></td></tr>
+            <tr><td>AI 智能批改</td><td>简答题自动评分与建议</td><td><select style="border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:13px;"><option>开启</option><option>关闭</option></select></td></tr>
+          </table>
+        </div>
+        <div class="card">
+          <div class="card-title">站点设置</div>
+          <div class="form-row">
+            <div class="form-item"><label>平台名称</label><input value="智学在线学习平台"></div>
+            <div class="form-item"><label>是否开放注册</label><select><option>开放</option><option>关闭</option></select></div>
+            <div class="form-item"><label>新用户默认角色</label><select><option>学生</option><option>需管理员审核</option></select></div>
+          </div>
+          <button class="btn btn-primary">保存设置</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+/* ================= 基础状态 ================= */
+let points = 1280;
+const fmt = n => n.toLocaleString('en-US');
+
+const TITLES = {
+  student: { home:'课程广场', mycourse:'我的课程', study:'学习中心', practice:'章节练习', exam:'在线考试', wrong:'错题本', score:'我的成绩', points:'积分中心', ai:'AI 答疑', profile:'个人中心' },
+  teacher: { overview:'教学概览', tcourse:'我的课程', bank:'题库管理', paper:'组卷考试', gen:'AI 智能出题', grade:'AI 批改', analytics:'学情分析' },
+  admin:   { dashboard:'数据看板', audit:'课程审核', courses:'课程管理', notice:'公告管理', comment:'评论管理', pointsrule:'积分规则', exchange:'兑换记录', users:'用户管理', aiusage:'AI 用量统计', settings:'系统设置' }
+};
+
+function updatePoints() {
+  const s = fmt(points);
+  ['topPoints','myPointsBig','mallPoints'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = s;
+  });
+}
+
+function toast(msg) {
+  let t = document.getElementById('protoToast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'protoToast';
+    t.style.cssText = 'position:fixed;left:50%;bottom:32px;transform:translateX(-50%) translateY(20px);background:#1A1759;color:#fff;padding:12px 22px;border-radius:999px;font-size:13px;opacity:0;transition:.25s;z-index:999;pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,.2);max-width:80%;text-align:center;';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  requestAnimationFrame(() => { t.style.opacity = '1'; t.style.transform = 'translateX(-50%) translateY(0)'; });
+  clearTimeout(t._h);
+  t._h = setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translateX(-50%) translateY(20px)'; }, 2400);
+}
+
+/* ================= 视图 / 页面切换 ================= */
+function switchView(view, btn) {
+  document.querySelectorAll('.proto-bar .switch button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + view).classList.add('active');
+}
+
+function findMenu(role, page) {
+  const items = [...document.querySelectorAll('#view-' + role + ' .menu-item')];
+  return items.find(m => (m.getAttribute('onclick') || '').includes("'" + role + "','" + page + "'"));
+}
+
+function switchPage(role, page, el) {
+  const view = document.getElementById('view-' + role);
+  view.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const target = document.getElementById(role + '-' + page);
+  if (target) target.classList.add('active');
+  view.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
+  const menu = el || findMenu(role, page);
+  if (menu) menu.classList.add('active');
+  const titleEl = document.getElementById(role + '-title');
+  if (titleEl && TITLES[role][page]) titleEl.textContent = TITLES[role][page];
+}
+
+function gotoStudent(page) { switchPage('student', page); }
+function gotoTeacher(page) { switchPage('teacher', page); }
+
+/* ================= 积分系统 ================= */
+function addPoints(n, reason, tag) {
+  points += n;
+  updatePoints();
+  toast('🔶 +' + n + ' 积分 · ' + reason);
+  const tables = document.querySelectorAll('#student-points table');
+  const detail = tables[tables.length - 1];
+  if (detail) {
+    const row = detail.insertRow(1);
+    row.innerHTML = '<td>刚刚</td><td><span class="tag tag-green">' + (tag || '完课奖励') + '</span></td><td>' + reason + '</td><td style="color:var(--success);font-weight:700;">+' + n + '</td>';
+  }
+}
+
+function earnPoints() {
+  const play = document.querySelector('#student-study .play-btn');
+  if (play) play.style.display = 'none';
+  const items = document.querySelectorAll('#student-study .chapter-item');
+  if (items[5]) { items[5].classList.remove('playing'); items[5].innerHTML = '2.3 继承与多态 <span class="st st-done">✓ 已学完</span>'; }
+  if (items[6]) { items[6].classList.add('playing'); items[6].innerHTML = '▶ 2.4 抽象类与接口 <span class="st st-ing">学习中</span>'; }
+  addPoints(10, '完成《Java 程序设计》2.3 继承与多态', '完课奖励');
+}
+
+function redeem(btn, name, cost) {
+  if (points < cost) { toast('积分不足：当前 ' + fmt(points) + '，兑换需 ' + cost + '，继续看课赚积分吧'); return; }
+  if (!confirm('确定使用 ' + cost + ' 积分兑换《' + name + '》？\n兑换后课程将加入「我的课程」，积分立即扣除。')) return;
+  points -= cost;
+  updatePoints();
+  btn.textContent = '✓ 已兑换';
+  btn.disabled = true;
+  toast('🎉 兑换成功，《' + name + '》已加入我的课程');
+}
+
+function tryExchange(name, cost) {
+  if (points < cost) {
+    if (confirm('当前积分 ' + fmt(points) + '，兑换《' + name + '》需要 ' + cost + ' 积分。\n去「积分中心」看看如何赚积分？')) gotoStudent('points');
+    return;
+  }
+  if (confirm('使用 ' + cost + ' 积分兑换《' + name + '》？')) {
+    points -= cost;
+    updatePoints();
+    toast('🎉 兑换成功，《' + name + '》已加入我的课程');
+  }
+}
+
+/* ================= 练习 / 考试 ================= */
+function selectOption(el) {
+  el.parentElement.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function submitAnswer(btn) {
+  const card = btn.closest('.question-card');
+  const sel = card.querySelector('.option.selected');
+  if (!sel) { toast('请先选择一个答案'); return; }
+  const opts = card.querySelectorAll('.option');
+  opts.forEach(o => o.classList.remove('selected'));
+  opts[1].classList.add('correct');
+  if (sel !== opts[1]) sel.classList.add('wrong');
+  card.querySelector('.analysis-box').classList.add('show');
+  btn.disabled = true;
+  btn.textContent = '已提交';
+}
+
+function examSelect(el, q) {
+  el.parentElement.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  const nav = document.querySelectorAll('#qNav .qn');
+  if (nav[q - 1]) nav[q - 1].classList.add('answered');
+}
+
+function submitExam() {
+  document.getElementById('examMain').style.display = 'none';
+  document.getElementById('examResult').classList.add('show');
+  addPoints(20, 'Java 第二章测试 90 分（及格奖励）', '考试奖励');
+}
+
+/* ================= AI 答疑 ================= */
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+}
+
+function sendChat() {
+  const input = document.getElementById('chatInput');
+  const q = input.value.trim();
+  if (!q) return;
+  input.value = '';
+  const box = document.getElementById('chatMessages');
+  box.insertAdjacentHTML('beforeend', '<div class="msg user"><div class="avatar">李</div><div class="bubble">' + escapeHtml(q) + '</div></div>');
+  const ai = document.createElement('div');
+  ai.className = 'msg ai';
+  ai.innerHTML = '<div class="avatar">AI</div><div class="bubble">正在结合课程内容思考…</div>';
+  box.appendChild(ai);
+  box.scrollTop = box.scrollHeight;
+  setTimeout(() => {
+    ai.querySelector('.bubble').innerHTML = '原型演示：实际系统中这里会调用大模型接口，结合当前课程《Spring Boot 企业级开发》的知识库进行流式回答。<br><br>🔶 每日首次提问可获得 +2 积分奖励。';
+    box.scrollTop = box.scrollHeight;
+  }, 900);
+}
+
+/* ================= 教师端：AI 出题 ================= */
+const GEN_QUESTIONS = [
+  { type:'单选题', q:'向 HashMap 中 put 元素时，决定其存储槽位的主要依据是？', opts:'A. 元素的 hashCode() 值经扰动与数组长度运算<br>B. 元素加入的顺序<br>C. 元素的内存地址<br>D. 随机分配', ans:'A', note:'HashMap 通过 key 的 hashCode() 高 16 位异或低 16 位扰动后，再与 (n-1) 做与运算定位槽位。' },
+  { type:'判断题', q:'JDK 8 中，HashMap 的链表长度只要超过 8 就一定会转换为红黑树。', opts:'A. 正确<br>B. 错误', ans:'B', note:'链表转红黑树还需满足数组长度 ≥ 64，否则会优先扩容而不是树化。' },
+  { type:'单选题', q:'HashMap 的默认初始容量和负载因子分别是？', opts:'A. 16 和 0.75<br>B. 8 和 0.75<br>C. 16 和 0.5<br>D. 32 和 1.0', ans:'A', note:'默认容量 16，负载因子 0.75，元素数量超过 容量×0.75 时触发 2 倍扩容。' }
+];
+
+function generateQuestions() {
+  const loading = document.getElementById('genLoading');
+  const result = document.getElementById('genResult');
+  const empty = document.getElementById('genEmpty');
+  const btn = document.getElementById('genBtn');
+  btn.disabled = true;
+  empty.style.display = 'none';
+  loading.classList.add('show');
+  result.innerHTML = '';
+  setTimeout(() => {
+    loading.classList.remove('show');
+    btn.disabled = false;
+    result.innerHTML = '<div style="font-size:13px;color:var(--text-3);margin-bottom:12px;">✨ 已生成 3 道题目（归属：Java 程序设计 · 第三章 3.2 HashMap 原理），请审核后入库：</div>' +
+      GEN_QUESTIONS.map((item, i) =>
+        '<div class="gen-question">' +
+          '<div style="display:flex;gap:8px;margin-bottom:10px;"><span class="tag tag-purple">' + item.type + '</span><span class="tag tag-orange">中等</span><span class="tag tag-green">AI 生成</span></div>' +
+          '<div style="font-size:14px;font-weight:600;margin-bottom:10px;">' + (i + 1) + '. ' + item.q + '</div>' +
+          '<div style="font-size:13px;color:var(--text-2);line-height:2;">' + item.opts + '</div>' +
+          '<div style="font-size:12px;color:var(--success);margin-top:10px;font-weight:600;">✓ 正确答案：' + item.ans + '</div>' +
+          '<div style="font-size:12px;color:var(--text-3);margin-top:4px;line-height:1.7;">解析：' + item.note + '</div>' +
+          '<div style="display:flex;gap:8px;margin-top:14px;">' +
+            '<button class="btn btn-success btn-sm" onclick="approveGen(this)">✓ 通过入库（第三章 3.2）</button>' +
+            '<button class="btn btn-plain btn-sm" onclick="discardGen(this)">丢弃</button>' +
+          '</div>' +
+        '</div>'
+      ).join('');
+  }, 1500);
+}
+
+function approveGen(btn) {
+  const card = btn.closest('.gen-question');
+  card.style.opacity = '.6';
+  btn.textContent = '✓ 已归入《Java 程序设计》第三章题库';
+  btn.disabled = true;
+  const other = card.querySelector('.btn-plain');
+  if (other) other.disabled = true;
+  toast('题目已入库：Java 程序设计 → 第三章 3.2 HashMap 原理');
+}
+
+function discardGen(btn) {
+  btn.closest('.gen-question').remove();
+}
+
+/* ================= 教师端：AI 批改 ================= */
+const GRADE_DATA = {
+  1: { score:'17 / 20', comment:'<b>AI 评语：</b>回答覆盖了底层结构（动态数组 vs 双向链表）、时间复杂度（O(1) 查询 / O(n) 遍历）、适用场景三个要点，并额外提到 1.5 倍扩容，理解准确。建议补充内存开销对比（LinkedList 节点需额外存储前后指针）。' },
+  2: { score:'10 / 20', comment:'<b>AI 评语：</b>仅答出"查询快 / 增删快"的结论，缺少底层结构说明、时间复杂度分析与适用场景展开，要点覆盖不足。建议复习 3.1 节后重新作答。' }
+};
+
+function aiGrade(n) {
+  const status = document.getElementById('gradeStatus' + n);
+  status.textContent = 'AI 批改中…';
+  status.className = 'tag tag-purple';
+  setTimeout(() => {
+    document.getElementById('gradeResult' + n).classList.add('show');
+    document.getElementById('gradeScore' + n).textContent = GRADE_DATA[n].score;
+    document.getElementById('gradeComment' + n).innerHTML = GRADE_DATA[n].comment;
+    status.textContent = 'AI 已评分';
+    status.className = 'tag tag-purple';
+  }, 900);
+}
+
+function confirmGrade(n) {
+  const status = document.getElementById('gradeStatus' + n);
+  status.textContent = '已采纳';
+  status.className = 'tag tag-green';
+  document.getElementById('gradeResult' + n).querySelectorAll('button').forEach(b => b.disabled = true);
+  toast('评分已采纳并同步至学生成绩');
+}
+
+function gradeAll() {
+  aiGrade(1);
+  setTimeout(() => aiGrade(2), 400);
+}
+
+/* ================= 管理端：课程审核 ================= */
+function auditRow(btn, action) {
+  const tr = btn.closest('tr');
+  const name = tr.cells[0].textContent.trim();
+  btn.parentElement.innerHTML = action === '通过'
+    ? '<span class="tag tag-green">已通过，待上架</span>'
+    : '<span class="tag tag-red">已驳回</span>';
+  toast('《' + name + '》审核' + action);
+}
+</script>
+</body>
+</html>
