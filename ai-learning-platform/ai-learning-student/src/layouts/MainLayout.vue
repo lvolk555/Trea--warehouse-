@@ -25,6 +25,7 @@ onMounted(loadPoints)
 
 // 学生端顶部导航（阶段二起逐步补充菜单项）
 const menus = [
+  { key: 'Dashboard', label: '学习看板' },
   { key: 'Square', label: '课程广场' },
   { key: 'MyCourses', label: '我的课程' },
   { key: 'Practice', label: '章节练习' },

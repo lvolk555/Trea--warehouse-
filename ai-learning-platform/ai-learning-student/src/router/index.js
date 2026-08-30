@@ -10,6 +10,7 @@ const routes = [
     meta: { requiresAuth: true },
     children: [
       { path: '', name: 'Home', redirect: '/square' },
+      { path: 'dashboard', name: 'Dashboard', component: () => import('../views/dashboard/StudentDashboardView.vue') },
       { path: 'square', name: 'Square', component: () => import('../views/course/SquareView.vue') },
       { path: 'course/:courseId', name: 'CourseDetail', component: () => import('../views/course/DetailView.vue') },
       { path: 'my-courses', name: 'MyCourses', component: () => import('../views/course/MyCoursesView.vue') },
