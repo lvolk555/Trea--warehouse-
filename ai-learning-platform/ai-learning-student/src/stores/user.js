@@ -26,5 +26,10 @@ export const useUserStore = defineStore('user', () => {
     localStorage.removeItem('student_user')
   }
 
-  return { token, user, isLoggedIn, isStudent, login, logout }
+  function updateUser(data) {
+    user.value = { ...user.value, ...data }
+    localStorage.setItem('student_user', JSON.stringify(user.value))
+  }
+
+  return { token, user, isLoggedIn, isStudent, login, logout, updateUser }
 })

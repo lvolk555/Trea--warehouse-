@@ -25,7 +25,9 @@ const routes = [
       { path: 'admin/comment', name: 'comment', component: () => import('../views/admin/CommentManageView.vue') },
       { path: 'admin/points-rule', name: 'points-rule', component: () => import('../views/admin/PointsRuleView.vue') },
       { path: 'admin/exchange-record', name: 'exchange-record', component: () => import('../views/admin/ExchangeRecordView.vue') },
-      { path: 'admin/user', name: 'user-manage', component: () => import('../views/admin/UserManageView.vue') }
+      { path: 'admin/user', name: 'user-manage', component: () => import('../views/admin/UserManageView.vue') },
+      // 个人中心（教师/管理员共用）
+      { path: 'profile', name: 'Profile', component: () => import('../views/profile/ProfileView.vue') }
     ]
   }
 ]

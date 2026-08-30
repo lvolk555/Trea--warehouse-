@@ -1,9 +1,11 @@
 package com.ailearning.module.user.controller;
 
 import com.ailearning.common.Result;
+import com.ailearning.module.user.dto.ChangePasswordDTO;
 import com.ailearning.module.user.dto.UserUpdateDTO;
 import com.ailearning.module.user.entity.User;
 import com.ailearning.module.user.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,6 +29,13 @@ public class UserController {
     @PutMapping("/profile")
     public Result<User> updateProfile(@RequestBody UserUpdateDTO dto) {
         return Result.ok(userService.updateProfile(dto));
+    }
+
+    /** 修改密码 */
+    @PutMapping("/password")
+    public Result<Void> changePassword(@Valid @RequestBody ChangePasswordDTO dto) {
+        userService.changePassword(dto);
+        return Result.ok();
     }
 
     /** 退出登录 */

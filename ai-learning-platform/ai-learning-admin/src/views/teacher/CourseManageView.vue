@@ -1,8 +1,9 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { message, Modal } from 'ant-design-vue'
-import { PlusOutlined, DeleteOutlined, SendOutlined, EditOutlined } from '@ant-design/icons-vue'
+import { PlusOutlined, DeleteOutlined, SendOutlined, EditOutlined, UploadOutlined } from '@ant-design/icons-vue'
 import * as courseApi from '../../api/course'
+import { uploadFile } from '../../api/upload'
 
 const loading = ref(false)
 const courses = ref([])
@@ -17,6 +18,7 @@ const statusMap = {
 // 编辑抽屉
 const drawerVisible = ref(false)
 const saving = ref(false)
+const uploading = reactive({ cover: false, videos: {} })
 const form = reactive({
   id: null,
   title: '',
@@ -29,6 +31,7 @@ const form = reactive({
 })
 
 const columns = [
+  { title: '封面', key: 'cover', width: 96 },
   { title: '课程名称', dataIndex: 'title' },
   { title: '分类', dataIndex: 'category', width: 100 },
   { title: '定价', key: 'price', width: 140 },
@@ -97,6 +100,37 @@ function addVideo(chapter) {
 
 function removeVideo(chapter, index) {
   chapter.videos.splice(index, 1)
+}
+
+// 封面上传（拦截默认上传，手动调用接口后写入表单）
+async function beforeCoverUpload(file) {
+  uploading.cover = true
+  try {
+    const res = await uploadFile(file)
+    form.cover = res.url
+    message.success('封面上传成功')
+  } catch (e) {
+    message.error(e.message)
+  } finally {
+    uploading.cover = false
+  }
+  return false
+}
+
+// 视频上传：写入对应章节下的视频地址
+async function beforeVideoUpload(ci, vi, file) {
+  const key = `${ci}-${vi}`
+  uploading.videos[key] = true
+  try {
+    const res = await uploadFile(file)
+    form.chapters[ci].videos[vi].url = res.url
+    message.success('视频上传成功')
+  } catch (e) {
+    message.error(e.message)
+  } finally {
+    uploading.videos[key] = false
+  }
+  return false
 }
 
 async function handleSave() {
@@ -168,6 +202,10 @@ onMounted(loadCourses)
         <template v-else-if="column.key === 'status'">
           <a-tag :color="statusMap[record.status]?.color">{{ statusMap[record.status]?.text }}</a-tag>
         </template>
+        <template v-else-if="column.key === 'cover'">
+          <a-image v-if="record.cover" :src="record.cover" :width="64" :height="40" class="cover-thumb" />
+          <span v-else class="muted">无封面</span>
+        </template>
         <template v-else-if="column.key === 'action'">
           <a-space>
             <a-button size="small" @click="openEdit(record)"><EditOutlined /> 编辑</a-button>
@@ -199,8 +237,19 @@ onMounted(loadCourses)
             </a-form-item>
           </a-col>
         </a-row>
-        <a-form-item label="封面图片 URL">
-          <a-input v-model:value="form.cover" placeholder="https://..." />
+        <a-form-item label="封面图片">
+          <a-space direction="vertical" style="width: 100%">
+            <div class="cover-upload-row">
+              <a-upload :show-upload-list="false" :before-upload="beforeCoverUpload" accept="image/*">
+                <a-button :loading="uploading.cover">
+                  <UploadOutlined /> {{ form.cover ? '重新上传' : '上传封面' }}
+                </a-button>
+              </a-upload>
+              <span class="muted">支持 jpg / png / gif / webp</span>
+            </div>
+            <a-input v-model:value="form.cover" placeholder="或直接填写图片 URL（https://...）" />
+            <img v-if="form.cover" :src="form.cover" class="cover-preview" alt="课程封面预览" />
+          </a-space>
         </a-form-item>
         <a-form-item label="课程简介（将作为 AI 答疑的课程上下文）">
           <a-textarea v-model:value="form.description" :rows="3" placeholder="介绍课程内容与目标" />
@@ -229,7 +278,15 @@ onMounted(loadCourses)
           </div>
           <div v-for="(video, vi) in chapter.videos" :key="vi" class="video-row">
             <a-input v-model:value="video.title" placeholder="视频标题" style="flex: 2" />
-            <a-input v-model:value="video.url" placeholder="视频地址 URL" style="flex: 3" />
+            <a-input v-model:value="video.url" placeholder="视频地址 URL" style="flex: 3">
+              <template #addonAfter>
+                <a-upload :show-upload-list="false" :before-upload="(f) => beforeVideoUpload(ci, vi, f)" accept="video/*">
+                  <a-button type="link" size="small" :loading="uploading.videos[`${ci}-${vi}`]" style="padding: 0">
+                    <UploadOutlined /> 上传
+                  </a-button>
+                </a-upload>
+              </template>
+            </a-input>
             <a-input-number v-model:value="video.duration" :min="0" placeholder="时长(秒)" style="width: 110px" />
             <a-button danger size="small" shape="circle" @click="removeVideo(chapter, vi)"><DeleteOutlined /></a-button>
           </div>
@@ -266,5 +323,26 @@ onMounted(loadCourses)
   gap: 8px;
   margin-bottom: 8px;
   align-items: center;
+}
+.cover-upload-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.muted {
+  color: #9ca3af;
+  font-size: 12px;
+}
+.cover-preview {
+  width: 160px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #f0f0f0;
+}
+.cover-thumb {
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid #f0f0f0;
 }
 </style>

@@ -61,6 +61,19 @@ function handleLogout() {
     }
   })
 }
+
+// 顶部用户下拉菜单
+const userMenuOptions = [
+  { key: 'profile', label: '个人中心' },
+  { key: 'logout', label: '退出登录' }
+]
+function handleUserMenu(key) {
+  if (key === 'profile') {
+    router.push({ name: 'Profile' })
+  } else if (key === 'logout') {
+    handleLogout()
+  }
+}
 </script>
 
 <template>
@@ -75,7 +88,7 @@ function handleLogout() {
         <n-menu mode="horizontal" :value="selectedKey" :options="menus.map(m => ({ key: m.key, label: m.label }))" style="flex: 1" @update:value="handleMenuClick" />
         <div class="user-area">
           <n-tag type="warning" size="small" round style="cursor: pointer" @click="router.push('/points')">积分 {{ pointsBalance }}</n-tag>
-          <n-dropdown :options="[{ key: 'logout', label: '退出登录' }]" @select="handleLogout">
+          <n-dropdown :options="userMenuOptions" @select="handleUserMenu">
             <n-button quaternary>
               {{ userStore.user?.nickname || userStore.user?.username }}
             </n-button>

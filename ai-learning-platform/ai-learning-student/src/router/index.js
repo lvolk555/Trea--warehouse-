@@ -26,7 +26,9 @@ const routes = [
       { path: 'ai-chat', name: 'AiChat', component: () => import('../views/ai/AiChatView.vue') },
       // 积分中心与公告
       { path: 'points', name: 'PointsCenter', component: () => import('../views/points/PointsCenterView.vue') },
-      { path: 'notices', name: 'Notices', component: () => import('../views/notice/NoticeListView.vue') }
+      { path: 'notices', name: 'Notices', component: () => import('../views/notice/NoticeListView.vue') },
+      // 个人中心
+      { path: 'profile', name: 'Profile', component: () => import('../views/profile/ProfileView.vue') }
     ]
   }
 ]

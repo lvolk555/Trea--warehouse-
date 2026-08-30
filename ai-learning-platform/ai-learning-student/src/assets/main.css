@@ -9,8 +9,30 @@ body {
     'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
   background: #f5f6fa;
   color: #1f2937;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 a {
   text-decoration: none;
+}
+
+::selection {
+  background: rgba(100, 108, 255, 0.2);
+}
+
+/* 细滚动条，提升整体质感 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: #d4d7e0;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #b9bdca;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
 }

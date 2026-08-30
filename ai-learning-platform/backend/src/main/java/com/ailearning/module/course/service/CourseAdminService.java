@@ -51,12 +51,16 @@ public class CourseAdminService {
 
     /**
      * 上架/下架课程（管理员对已审核课程的操作）
+     * 未审核通过的课程（待审核状态）不允许上下架，必须先完成审核
      */
     public Course changeStatus(Long courseId, boolean online) {
         UserContext.checkRole(UserContext.ROLE_ADMIN);
         Course course = courseMapper.selectById(courseId);
         if (course == null) {
             throw new BizException("课程不存在");
+        }
+        if (course.getStatus().equals(CourseService.STATUS_PENDING)) {
+            throw new BizException("该课程尚未审核通过，请先在课程审核中处理后再上下架");
         }
         course.setStatus(online ? CourseService.STATUS_ONLINE : CourseService.STATUS_OFFLINE);
         courseMapper.updateById(course);

@@ -8,8 +8,30 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
     'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
   background: #f0f2f5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 a {
   text-decoration: none;
+}
+
+::selection {
+  background: rgba(22, 119, 255, 0.2);
+}
+
+/* 细滚动条，提升整体质感 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: #d4d7e0;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #b9bdca;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
 }

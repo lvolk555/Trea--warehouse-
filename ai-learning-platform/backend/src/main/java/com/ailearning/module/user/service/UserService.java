@@ -3,6 +3,7 @@ package com.ailearning.module.user.service;
 import cn.dev33.satoken.stp.StpUtil;
 import com.ailearning.common.BizException;
 import com.ailearning.module.points.service.PointsService;
+import com.ailearning.module.user.dto.ChangePasswordDTO;
 import com.ailearning.module.user.dto.LoginDTO;
 import com.ailearning.module.user.dto.LoginVO;
 import com.ailearning.module.user.dto.RegisterDTO;
@@ -98,6 +99,21 @@ public class UserService {
         }
         userMapper.updateById(user);
         return user;
+    }
+
+    /**
+     * 修改密码：校验原密码后更新为新密码（新密码 BCrypt 加密存储）
+     */
+    public void changePassword(ChangePasswordDTO dto) {
+        User user = currentUser();
+        if (!PASSWORD_ENCODER.matches(dto.getOldPassword(), user.getPassword())) {
+            throw new BizException("原密码错误");
+        }
+        if (dto.getNewPassword().length() < 6) {
+            throw new BizException("新密码至少 6 位");
+        }
+        user.setPassword(PASSWORD_ENCODER.encode(dto.getNewPassword()));
+        userMapper.updateById(user);
     }
 
     /**
