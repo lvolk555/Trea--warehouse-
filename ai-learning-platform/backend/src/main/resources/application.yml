@@ -1,0 +1,50 @@
+server:
+  port: 8080
+  servlet:
+    # 所有接口统一挂在 /api 前缀下
+    context-path: /api
+
+spring:
+  application:
+    name: ai-learning-platform
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/ai_learning?useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: root
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: Asia/Shanghai
+
+# MyBatis-Plus 配置
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      id-type: auto
+
+# Sa-Token 登录鉴权配置
+sa-token:
+  # 请求头中 token 的名称
+  token-name: Authorization
+  # token 有效期（秒），7 天
+  timeout: 604800
+  # 是否允许同一账号多地登录
+  is-concurrent: true
+  # token 风格：uuid
+  token-style: uuid
+  # 从请求头读取 token
+  is-read-header: true
+  is-read-cookie: false
+  # 请求头 token 前缀
+  token-prefix: Bearer
+  is-log: false
+
+# AI 大模型配置（阶段四启用，密钥通过环境变量注入，禁止硬编码）
+ai:
+  zhipu:
+    api-key: ${ZHIPU_API_KEY:}
+    base-url: https://open.bigmodel.cn/api/paas/v4
+    model: glm-4-flash
