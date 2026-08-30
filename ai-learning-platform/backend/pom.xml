@@ -91,6 +91,8 @@
                 <configuration>
                     <!-- JDK 23+ 需显式开启注解处理，Lombok 才能生效 -->
                     <proc>full</proc>
+                    <!-- 生成方法参数名，供 Spring 反射解析 @PathVariable/@RequestParam 参数名 -->
+                    <parameters>true</parameters>
                     <annotationProcessorPaths>
                         <path>
                             <groupId>org.projectlombok</groupId>
