@@ -262,7 +262,7 @@ private HttpClient buildHttpClient() {
 
 ### 8.3 验证
 
-- `api_test.py`：63/63 全部通过。
+- `api_test.py`：79/79 全部通过。
 - `api_test_extended.py`：60/60 全部通过。
 
 ---
@@ -272,7 +272,7 @@ private HttpClient buildHttpClient() {
 1. 已彻底消除项目中课程封面与章节视频对第三方外网（picsum.photos / w3schools）的依赖，全部改为本地 `projectfiles/` 静态资源并映射到 `/api/files/**`。
 2. 下载并本地化了 2 个示例视频、确认本地 10 张课程封面与 8 张头像均有效。
 3. **修复 AI 接口代理出网问题**：后端 `ZhipuAiClient` 支持读取标准代理环境变量，AI 答疑（SSE 流式）/AI 出题在需代理环境下恢复正常。
-4. **修复测试脚本同步问题**：`api_test.py` 与 `api_test_extended.py` 已适配「课程广场 POST」与「AI 已可用」，全量测试 63 + 60 例全部通过。
+4. **修复测试脚本同步问题**：`api_test.py` 与 `api_test_extended.py` 已适配「课程广场 POST」与「AI 已可用」，全量测试 79 + 60 例全部通过。
 5. 前端遗留的 picsum 外网兜底 URL 已移除。
 
 修复后的数据库与 SQL 源文件、生成脚本、后端代码、测试脚本均保持一致，可直接通过 `sync.sh` 同步到仓库。

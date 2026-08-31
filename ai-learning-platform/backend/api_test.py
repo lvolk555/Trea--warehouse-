@@ -219,6 +219,64 @@ def test_points(tk_student, tk_admin):
     check("管理端查询兑换记录", r["code"] == 200)
 
 
+# ==================== 6.5 积分活动与优惠券核销 ====================
+def test_activity_and_coupon(tk_student, tk_admin):
+    print("\n== 6.5 积分活动与优惠券核销 ==")
+    import subprocess
+    tk3 = login("student3")
+
+    # 活动列表（4 个积分任务 + 3 个优惠券活动，均已发布）
+    s, r = call("GET", "/points/activities", token=tk3)
+    check("积分活动列表返回 7 个活动", r["code"] == 200 and len(r["data"]) == 7, str(r.get("data")))
+
+    # 任务真实性：student3 初始状态 4 个任务均未完成，一律拒绝领取
+    for aid, name in [(1, "未完善资料"), (2, "未完成AI答疑"), (3, "未完成章节学习"), (4, "未通过考试")]:
+        s, r = call("POST", f"/points/activities/{aid}/claim", token=tk3)
+        check(f"{name}领取被拒", r["code"] != 200, str(r))
+
+    # 完善资料后 → profile 任务可真实领取（+10）
+    subprocess.run(["mysql", "-uroot", "-proot", "ai_learning", "-e",
+                    "UPDATE `user` SET avatar='http://demo/avatar.png' WHERE id=5"], capture_output=True)
+    s, r = call("POST", "/points/activities/1/claim", token=tk3)
+    check("完善资料后领取成功 +10", r["code"] == 200 and r["data"]["reward"] == 10, str(r.get("data")))
+    s, r = call("POST", "/points/activities/1/claim", token=tk3)
+    check("重复领取同一活动被拒", r["code"] != 200, str(r))
+
+    # 优惠券发放（满减/折扣券快照落库）
+    s, r = call("POST", "/points/activities/5/claim", token=tk3)
+    check("领取无门槛券成功", r["code"] == 200 and bool(r["data"]["couponName"]), str(r.get("data")))
+    call("POST", "/points/activities/6/claim", token=tk3)
+    call("POST", "/points/activities/7/claim", token=tk3)
+    s, r = call("GET", "/points/coupons", token=tk3)
+    check("优惠券列表含 3 张券", r["code"] == 200 and len(r["data"]) == 3, str(r.get("data")))
+
+    # 优惠券核销：student1 领满减券（满 500 减 50）兑换课程 2（800 分）
+    s, r = call("POST", "/points/activities/6/claim", token=tk_student)
+    check("student1 领取满减券", r["code"] == 200, str(r))
+    s, r = call("GET", "/points/coupons", token=tk_student)
+    manjian = next((c for c in r["data"] if c.get("name") == "课程满减券"), None)
+    check("student1 拿到满减券", manjian is not None, str(r.get("data")))
+    subprocess.run(["mysql", "-uroot", "-proot", "ai_learning", "-e",
+                    "UPDATE points_account SET balance=1000 WHERE user_id=3"], capture_output=True)
+    s, r = call("POST", f"/points/exchange/2?couponId={manjian['id']}", token=tk_student)
+    check("满减券抵扣兑换成功(减50实付750)", r["code"] == 200 and r["data"]["discount"] == 50 and r["data"]["pointsCost"] == 750, str(r.get("data")))
+    s, r = call("GET", "/points/account", token=tk_student)
+    check("抵扣后余额扣 750", r["data"]["balance"] == 250, str(r.get("data")))
+    s, r = call("GET", "/points/coupons", token=tk_student)
+    used = next((c for c in r["data"] if c.get("name") == "课程满减券"), None)
+    check("满减券已核销(已使用)", used.get("status") == 1, str(used))
+
+    # 拒绝场景：他人券 / 未达门槛
+    s, r = call("POST", f"/points/exchange/2?couponId={manjian['id']}", token=tk3)
+    check("使用他人券被拒", r["code"] != 200, str(r))
+    subprocess.run(["mysql", "-uroot", "-proot", "ai_learning", "-e",
+                    "INSERT INTO user_coupon(user_id,name,type,value,threshold,status,expire_time) VALUES(5,'高门槛券',1,50,900,0,NOW())"], capture_output=True)
+    s, r = call("GET", "/points/coupons", token=tk3)
+    high = next((c for c in r["data"] if c.get("name") == "高门槛券"), None)
+    s, r = call("POST", f"/points/exchange/2?couponId={high['id']}", token=tk3)
+    check("未达门槛使用满减券被拒", r["code"] != 200, str(r))
+
+
 # ==================== 7. 统计看板 ====================
 def test_stats(tk_student, tk_teacher, tk_admin):
     print("\n== 7. 统计看板 ==")
@@ -300,6 +358,7 @@ if __name__ == "__main__":
     test_practice(tk_student)
     test_exam(tk_teacher, tk_student)
     test_points(tk_student, tk_admin)
+    test_activity_and_coupon(tk_student, tk_admin)
     test_stats(tk_student, tk_teacher, tk_admin)
     test_permission(tk_student, tk_teacher, tk_admin)
     test_concurrent_exchange()
