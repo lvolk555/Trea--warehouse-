@@ -2,7 +2,8 @@
 import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
-import { courseDetail, reportProgress, resumePosition } from '../../api/course'
+import { courseDetail, reportProgress, resumePosition, getNote, saveNote } from '../../api/course'
+import NoteEditor from '../../components/NoteEditor.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -16,6 +17,11 @@ const videoEl = ref(null)
 const resuming = ref(false)
 const reporting = ref(false)
 let reportTimer = null
+
+// 学习笔记
+const noteShow = ref(false)
+const noteContent = ref('')
+const noteSaving = ref(false)
 
 // 当前视频与章节信息
 const currentVideo = computed(() => {
@@ -47,6 +53,7 @@ async function loadCourse() {
 // 切换视频
 async function switchVideo(video) {
   flushProgress()
+  noteShow.value = false
   videoId.value = video.id
   router.replace(`/study/${courseId}/${video.id}`)
   await nextTick()
@@ -132,6 +139,29 @@ function formatTime(seconds) {
   return `${m}:${String(s).padStart(2, '0')}`
 }
 
+// 打开记笔记：加载该视频已有笔记并弹出悬浮编辑器
+async function openNote() {
+  try {
+    noteContent.value = await getNote(videoId.value)
+  } catch (e) {
+    noteContent.value = ''
+  }
+  noteShow.value = true
+}
+
+async function handleSaveNote(content) {
+  noteSaving.value = true
+  try {
+    await saveNote({ videoId: videoId.value, content })
+    message.success('笔记已保存')
+    noteShow.value = false
+  } catch (e) {
+    message.error(e.message)
+  } finally {
+    noteSaving.value = false
+  }
+}
+
 onMounted(async () => {
   await loadCourse()
   await initPlayer()
@@ -168,6 +198,7 @@ onBeforeUnmount(() => {
           </video>
           <n-space justify="space-between" style="margin-top: 12px">
             <n-button :disabled="currentIndex <= 0" @click="goPrev">上一节</n-button>
+            <n-button secondary @click="openNote">📝 记笔记</n-button>
             <n-button type="primary" :disabled="currentIndex >= flatVideos.length - 1" @click="goNext">
               下一节
             </n-button>
@@ -194,6 +225,9 @@ onBeforeUnmount(() => {
         </n-card>
       </n-grid-item>
     </n-grid>
+
+    <!-- 悬浮可拖拽的记笔记富文本编辑器 -->
+    <NoteEditor v-model:show="noteShow" :initial-content="noteContent" :saving="noteSaving" @save="handleSaveNote" />
   </div>
 </template>
 

@@ -81,6 +81,14 @@ function goStudy(video) {
   router.push(`/study/${course.value.id}/${video.id}`)
 }
 
+function formatDuration(sec) {
+  const s = Number(sec || 0)
+  if (s < 60) return `${s} 秒`
+  const m = Math.floor(s / 60)
+  if (s % 60 === 0) return `${m} 分钟`
+  return `${m} 分 ${s % 60} 秒`
+}
+
 onMounted(() => {
   loadDetail()
   loadComments()
@@ -125,7 +133,7 @@ onMounted(() => {
                 <span class="play-icon">▶</span>
                 {{ video.title }}
               </span>
-              <span class="muted">{{ Math.round((video.duration || 0) / 60) }} 分钟</span>
+              <span class="muted">{{ formatDuration(video.duration) }}</span>
               <n-tag v-if="video.finished" size="small" type="success">已完成</n-tag>
             </div>
           </n-collapse-item>
@@ -231,5 +239,15 @@ onMounted(() => {
   color: #4b5563;
   font-size: 14px;
   line-height: 1.6;
+}
+@media (max-width: 768px) {
+  .head {
+    flex-direction: column;
+    gap: 16px;
+  }
+  .cover {
+    width: 100%;
+    height: auto;
+  }
 }
 </style>

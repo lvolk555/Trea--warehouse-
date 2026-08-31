@@ -68,10 +68,11 @@ onBeforeUnmount(() => {
 <template>
   <n-spin :show="loading">
     <div v-if="stats">
-      <h2 style="margin-bottom: 16px">学习看板</h2>
+      <n-h2 style="margin-bottom: 4px">学习看板</n-h2>
+      <n-text depth="3">学习进度、积分与成绩总览</n-text>
 
       <!-- 概况指标卡 -->
-      <n-grid :cols="4" :x-gap="16" :y-gap="16">
+      <n-grid cols="1 s:2 m:4" responsive="screen" :x-gap="16" :y-gap="16" style="margin-top: 16px">
         <n-grid-item>
           <n-card>
             <n-statistic label="在学课程" :value="stats.courseCount">

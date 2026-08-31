@@ -198,4 +198,12 @@ onUnmounted(() => timer && clearInterval(timer))
   font-weight: 500;
   line-height: 1.7;
 }
+@media (max-width: 768px) {
+  .exam-body {
+    flex-direction: column;
+  }
+  .answer-card {
+    width: 100%;
+  }
+}
 </style>

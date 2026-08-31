@@ -147,12 +147,19 @@ onMounted(loadCourses)
         </n-tag>
         <div class="q-content">{{ currentQuestion.content }}</div>
 
-        <!-- 单选/判断 -->
-        <n-radio-group v-if="currentQuestion.type !== 2" v-model:value="myAnswer" :disabled="!!judgeResult">
+        <!-- 单选 -->
+        <n-radio-group v-if="currentQuestion.type === 1" v-model:value="myAnswer" :disabled="!!judgeResult">
           <n-space vertical>
             <n-radio v-for="(opt, i) in currentQuestion.options" :key="i" :value="optionLetters[i]">
               {{ optionLetters[i] }}. {{ opt }}
             </n-radio>
+          </n-space>
+        </n-radio-group>
+        <!-- 判断 -->
+        <n-radio-group v-else-if="currentQuestion.type === 3" v-model:value="myAnswer" :disabled="!!judgeResult">
+          <n-space>
+            <n-radio value="对">对</n-radio>
+            <n-radio value="错">错</n-radio>
           </n-space>
         </n-radio-group>
         <!-- 多选 -->

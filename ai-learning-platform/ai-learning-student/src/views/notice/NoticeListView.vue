@@ -25,9 +25,10 @@ onMounted(load)
 
 <template>
   <div>
-    <h2 style="margin-bottom: 16px">平台公告</h2>
+    <n-h2 style="margin-bottom: 4px">平台公告</n-h2>
+    <n-text depth="3">系统通知、活动公告与课程上新</n-text>
     <n-spin :show="loading">
-      <n-card v-for="n in list" :key="n.id" style="margin-bottom: 12px">
+      <n-card v-for="n in list" :key="n.id" style="margin-top: 16px">
         <div class="head">
           <n-tag v-if="n.top === 1" type="error" size="small">置顶</n-tag>
           <n-tag :type="n.type === 1 ? 'info' : n.type === 2 ? 'warning' : 'success'" size="small">

@@ -92,11 +92,12 @@ async function handleChangePassword() {
 
 <template>
   <div>
-    <h2 style="margin-bottom: 16px">个人中心</h2>
+    <n-h2 style="margin-bottom: 4px">个人中心</n-h2>
+    <n-text depth="3">账号资料与安全设置</n-text>
 
-    <n-grid :cols="2" :x-gap="16" :y-gap="16">
+    <n-grid cols="1 m:2" responsive="screen" item-responsive :x-gap="16" :y-gap="16" style="margin-top: 16px">
       <!-- 账号信息 -->
-      <n-grid-item>
+      <n-grid-item span="1">
         <n-card title="账号信息">
           <div class="info-head">
             <n-avatar :size="64" :src="userStore.user?.avatar" round>
@@ -117,7 +118,7 @@ async function handleChangePassword() {
       </n-grid-item>
 
       <!-- 修改资料 -->
-      <n-grid-item>
+      <n-grid-item span="1">
         <n-card title="修改资料">
           <n-form ref="profileFormRef" :model="profileForm" :rules="profileRules" label-placement="top">
             <n-form-item label="昵称" path="nickname">
@@ -145,7 +146,7 @@ async function handleChangePassword() {
       </n-grid-item>
 
       <!-- 修改密码 -->
-      <n-grid-item span="2">
+      <n-grid-item span="1 m:2">
         <n-card title="修改密码">
           <n-form ref="passwordFormRef" :model="passwordForm" :rules="passwordRules" label-placement="top" style="max-width: 420px">
             <n-form-item label="原密码" path="oldPassword">

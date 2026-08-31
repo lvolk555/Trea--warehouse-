@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useMessage, useDialog } from 'naive-ui'
-import { pointsAccount, pointsRecords, dailySign, signMonth, exchangeCourse, myExchanges } from '../../api/points'
+import { pointsAccount, pointsRecords, dailySign, signMonth, exchangeCourse, myExchanges, pointsActivities, claimActivity } from '../../api/points'
 import { courseSquare } from '../../api/course'
 
 const message = useMessage()
@@ -22,8 +22,10 @@ const recordTotal = ref(0)
 // 商城
 const mallCourses = ref([])
 const exchanges = ref([])
+// 积分活动
+const activities = ref([])
 
-const typeText = { 1: '完课奖励', 2: '签到奖励', 3: '考试奖励', 4: 'AI 提问', 5: '兑换扣减', 6: '注册赠送' }
+const typeText = { 1: '完课奖励', 2: '签到奖励', 3: '考试奖励', 4: 'AI 提问', 5: '兑换扣减', 6: '注册赠送', 7: '积分活动' }
 
 async function loadAccount() {
   try {
@@ -99,20 +101,40 @@ function handleExchange(course) {
   })
 }
 
+async function loadActivities() {
+  try {
+    activities.value = await pointsActivities()
+  } catch (e) {
+    /* 忽略 */
+  }
+}
+
+async function handleClaim(activity) {
+  try {
+    const r = await claimActivity(activity.id)
+    message.success(`领取成功，+${r.reward} 积分`)
+    await Promise.all([loadAccount(), loadActivities()])
+  } catch (e) {
+    message.warning(e.message)
+  }
+}
+
 onMounted(() => {
   loadAccount()
   loadSign()
   loadRecords()
   loadMall()
+  loadActivities()
 })
 </script>
 
 <template>
   <div>
-    <h2 style="margin-bottom: 16px">积分中心</h2>
+    <n-h2 style="margin-bottom: 4px">积分中心</n-h2>
+    <n-text depth="3">签到、完课、考试获得积分，可用积分兑换课程</n-text>
 
     <!-- 账户概览 -->
-    <n-card>
+    <n-card style="margin-top: 16px">
       <div class="account-row">
         <div class="balance">
           <div class="num">{{ account?.balance ?? '--' }}</div>
@@ -135,6 +157,31 @@ onMounted(() => {
       <div class="tips">
         获取方式：完成视频 +10 · 每日签到 +5 · 考试及格 +20 · AI 提问 +2（均有每日上限）
       </div>
+    </n-card>
+
+    <!-- 积分活动 -->
+    <n-card title="积分活动" size="small" style="margin-top: 16px">
+      <template #header-extra>
+        <n-text depth="3" style="font-size: 12px">每日任务，完成后领取积分</n-text>
+      </template>
+      <n-grid cols="1 s:2 m:4" responsive="screen" :x-gap="12" :y-gap="12">
+        <n-grid-item v-for="a in activities" :key="a.id">
+          <div class="activity-item">
+            <div class="activity-icon">{{ a.title.charAt(0) }}</div>
+            <div class="activity-body">
+              <div class="activity-title">{{ a.title }}</div>
+              <div class="activity-desc">{{ a.description }}</div>
+            </div>
+            <div class="activity-right">
+              <n-tag type="warning" size="small">+{{ a.reward }}</n-tag>
+              <n-button size="tiny" :type="a.claimed ? 'default' : 'primary'" :disabled="a.claimed" @click="handleClaim(a)">
+                {{ a.claimed ? '已完成' : '领取' }}
+              </n-button>
+            </div>
+          </div>
+        </n-grid-item>
+      </n-grid>
+      <n-empty v-if="activities.length === 0" description="暂无积分活动" style="margin: 16px 0" />
     </n-card>
 
     <n-tabs v-model:value="tab" type="line" style="margin-top: 16px">
@@ -166,7 +213,7 @@ onMounted(() => {
       <!-- 积分商城 -->
       <n-tab-pane name="mall" tab="积分商城">
         <n-spin :show="loading">
-          <n-grid :cols="3" :x-gap="16" :y-gap="16">
+          <n-grid cols="1 s:2 m:3" responsive="screen" :x-gap="16" :y-gap="16">
             <n-grid-item v-for="course in mallCourses" :key="course.id">
               <n-card>
                 <img :src="course.cover" class="mall-cover" />
@@ -247,8 +294,60 @@ onMounted(() => {
   display: flex;
   align-items: center;
 }
+.activity-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  background: #fafafa;
+}
+.activity-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.activity-body {
+  flex: 1;
+  min-width: 0;
+}
+.activity-title {
+  font-weight: 600;
+  font-size: 14px;
+}
+.activity-desc {
+  color: #9ca3af;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.activity-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  flex-shrink: 0;
+}
 .muted {
   color: #9ca3af;
   font-size: 13px;
+}
+@media (max-width: 768px) {
+  .account-row {
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .account-row .stat {
+    flex: 1 1 40%;
+  }
 }
 </style>

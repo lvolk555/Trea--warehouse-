@@ -72,10 +72,12 @@ async function handleLogin() {
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 24px 16px;
   background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
 }
 .auth-card {
-  width: 400px;
+  width: 100%;
+  max-width: 400px;
   background: #fff;
   border-radius: 16px;
   padding: 40px 36px;

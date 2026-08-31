@@ -5,27 +5,27 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
- * 积分明细实体：每笔积分变动一条记录
- * 类型：1完课 2签到 3考试奖励 4AI提问 5兑换扣减 6注册赠送 7积分活动
+ * 积分活动领取记录实体：(user_id, activity_id, claim_date) 唯一约束保证每日限领一次
  */
 @Data
-@TableName("points_record")
-public class PointsRecord {
+@TableName("points_activity_record")
+public class PointsActivityRecord {
 
     @TableId(type = IdType.AUTO)
     private Long id;
 
     private Long userId;
 
-    private Integer type;
+    private Long activityId;
 
-    /** 变动值：正为获得，负为消耗 */
-    private Integer changeValue;
+    private LocalDate claimDate;
 
-    private String description;
+    /** 实际到账积分 */
+    private Integer reward;
 
     private LocalDateTime createTime;
 }

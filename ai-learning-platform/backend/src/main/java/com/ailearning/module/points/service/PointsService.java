@@ -35,13 +35,14 @@ public class PointsService {
     private final PointsRecordMapper recordMapper;
     private final PointsRuleMapper ruleMapper;
 
-    /** 明细类型：1完课 2签到 3考试奖励 4AI提问 5兑换扣减 6注册赠送 */
+    /** 明细类型：1完课 2签到 3考试奖励 4AI提问 5兑换扣减 6注册赠送 7积分活动 */
     public static final int TYPE_VIDEO_FINISH = 1;
     public static final int TYPE_DAILY_SIGN = 2;
     public static final int TYPE_EXAM_PASS = 3;
     public static final int TYPE_AI_ASK = 4;
     public static final int TYPE_EXCHANGE = 5;
     public static final int TYPE_REGISTER_GIFT = 6;
+    public static final int TYPE_ACTIVITY = 7;
 
     /** 规则键 → 明细类型 */
     private static final Map<String, Integer> RULE_TYPE_MAP = Map.of(

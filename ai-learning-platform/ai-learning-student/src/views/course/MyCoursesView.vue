@@ -30,8 +30,11 @@ onMounted(loadData)
 
 <template>
   <div>
+    <n-h2 style="margin-bottom: 4px">我的课程</n-h2>
+    <n-text depth="3">已选课程的继续学习入口</n-text>
+
     <n-spin :show="loading">
-      <n-grid :x-gap="16" :y-gap="16" cols="1 s:2 m:3" responsive="screen">
+      <n-grid :x-gap="16" :y-gap="16" cols="1 s:2 m:3" responsive="screen" style="margin-top: 16px">
         <n-grid-item v-for="course in courses" :key="course.id">
           <n-card hoverable class="course-card">
             <template #cover>

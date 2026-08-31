@@ -41,17 +41,21 @@ onMounted(loadData)
 
 <template>
   <div>
+    <n-h2 style="margin-bottom: 4px">课程广场</n-h2>
+    <n-text depth="3">浏览并选课，免费课程可直接加入学习</n-text>
+
     <!-- 搜索与分类筛选 -->
-    <n-card style="margin-bottom: 16px">
-      <n-space align="center">
-        <n-input v-model:value="query.keyword" placeholder="搜索课程" clearable style="width: 260px" @keyup.enter="search" />
-        <n-button type="primary" @click="search">搜索</n-button>
-        <n-divider vertical />
-        <n-radio-group v-model:value="query.category" @update:value="search">
+    <n-card style="margin-top: 16px; margin-bottom: 16px">
+      <div class="search-bar">
+        <div class="search-row">
+          <n-input v-model:value="query.keyword" placeholder="搜索课程" clearable class="search-input" @keyup.enter="search" />
+          <n-button type="primary" @click="search">搜索</n-button>
+        </div>
+        <n-radio-group v-model:value="query.category" @update:value="search" class="category-group">
           <n-radio-button :value="null">全部</n-radio-button>
           <n-radio-button v-for="c in categories" :key="c" :value="c">{{ c }}</n-radio-button>
         </n-radio-group>
-      </n-space>
+      </div>
     </n-card>
 
     <!-- 课程卡片 -->

@@ -4,9 +4,12 @@ import com.ailearning.common.Result;
 import com.ailearning.common.UserContext;
 import com.ailearning.module.points.entity.CourseExchangeRecord;
 import com.ailearning.module.points.entity.PointsAccount;
+import com.ailearning.module.points.entity.PointsActivity;
+import com.ailearning.module.points.entity.PointsActivityRecord;
 import com.ailearning.module.points.entity.PointsRecord;
 import com.ailearning.module.points.entity.SignRecord;
 import com.ailearning.module.points.mapper.PointsRecordMapper;
+import com.ailearning.module.points.service.ActivityService;
 import com.ailearning.module.points.service.ExchangeService;
 import com.ailearning.module.points.service.PointsService;
 import com.ailearning.module.points.service.SignService;
@@ -29,6 +32,7 @@ public class StudentPointsController {
     private final PointsService pointsService;
     private final SignService signService;
     private final ExchangeService exchangeService;
+    private final ActivityService activityService;
     private final PointsRecordMapper recordMapper;
 
     /** 我的积分账户 */
@@ -72,5 +76,17 @@ public class StudentPointsController {
     @GetMapping("/exchange/my")
     public Result<List<CourseExchangeRecord>> myExchanges() {
         return Result.ok(exchangeService.myExchanges());
+    }
+
+    /** 积分活动列表（携带当日完成状态） */
+    @GetMapping("/activities")
+    public Result<List<PointsActivity>> activities() {
+        return Result.ok(activityService.list());
+    }
+
+    /** 领取积分活动奖励 */
+    @PostMapping("/activities/{id}/claim")
+    public Result<PointsActivityRecord> claimActivity(@PathVariable Long id) {
+        return Result.ok(activityService.claim(id));
     }
 }

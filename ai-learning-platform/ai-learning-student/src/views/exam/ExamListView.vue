@@ -1,19 +1,31 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
-import { studentExamList } from '../../api/exam'
+import { studentExamList, myScores } from '../../api/exam'
 
 const router = useRouter()
 const message = useMessage()
 
 const loading = ref(false)
 const exams = ref([])
+const scores = ref([])
+
+// 考试 ID → 成绩记录（一次考试对应一条记录，取最近一次）
+const scoreMap = computed(() => {
+  const map = {}
+  for (const s of scores.value) {
+    if (!map[s.examId]) map[s.examId] = s
+  }
+  return map
+})
 
 async function loadData() {
   loading.value = true
   try {
-    exams.value = await studentExamList()
+    const [examData, scoreData] = await Promise.all([studentExamList(), myScores()])
+    exams.value = examData
+    scores.value = scoreData
   } catch (e) {
     message.error(e.message)
   } finally {
@@ -21,7 +33,18 @@ async function loadData() {
   }
 }
 
+function scoreType(score) {
+  const s = Number(score)
+  if (s >= 90) return 'success'
+  if (s >= 60) return 'warning'
+  return 'error'
+}
+
 function startExam(exam) {
+  if (scoreMap.value[exam.id]) {
+    message.info('你已完成该考试，可到「我的成绩」查看分数')
+    return
+  }
   router.push(`/exam/${exam.id}`)
 }
 
@@ -46,7 +69,11 @@ onMounted(loadData)
             </template>
           </n-thing>
           <template #suffix>
-            <n-button type="primary" size="small">参加考试</n-button>
+            <n-space v-if="scoreMap[exam.id]" align="center" size="small">
+              <n-tag size="small" type="info">已考</n-tag>
+              <n-tag :type="scoreType(scoreMap[exam.id].score)" size="large" round>{{ scoreMap[exam.id].score }} 分</n-tag>
+            </n-space>
+            <n-button v-else type="primary" size="small">参加考试</n-button>
           </template>
         </n-list-item>
       </n-list>

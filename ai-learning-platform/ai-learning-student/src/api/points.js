@@ -8,6 +8,10 @@ export const signMonth = () => request.get('/points/sign/month')
 export const exchangeCourse = (courseId) => request.post(`/points/exchange/${courseId}`)
 export const myExchanges = () => request.get('/points/exchange/my')
 
+// 积分活动
+export const pointsActivities = () => request.get('/points/activities')
+export const claimActivity = (id) => request.post(`/points/activities/${id}/claim`)
+
 // 运营接口：公告、评论
 export const notices = () => request.get('/ops/notices')
 export const courseComments = (courseId) => request.get(`/ops/comments/${courseId}`)

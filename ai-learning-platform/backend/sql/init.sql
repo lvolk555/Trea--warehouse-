@@ -1,8 +1,8 @@
 -- ============================================================
 -- AI 辅助在线学习平台 数据库初始化脚本
 -- 数据库：MySQL 8.x  字符集：utf8mb4
--- 共 21 张表：用户域 1 + 课程域 4 + 学习域 2 + 考试域 5
---            + AI 域 2 + 积分域 4 + 运营域 2 + 签到记录 1
+-- 共 23 张表：用户域 1 + 课程域 4 + 学习域 2 + 考试域 5
+--            + AI 域 2 + 积分域 6 + 运营域 2 + 签到记录 1
 -- 测试账号密码均为 123456（BCrypt 加密）
 -- ============================================================
 
@@ -243,7 +243,7 @@ DROP TABLE IF EXISTS `points_record`;
 CREATE TABLE `points_record` (
   `id`           BIGINT       NOT NULL AUTO_INCREMENT COMMENT '主键',
   `user_id`      BIGINT       NOT NULL COMMENT '学生',
-  `type`         TINYINT      NOT NULL COMMENT '1完课 2签到 3考试奖励 4AI提问 5兑换扣减 6注册赠送',
+  `type`         TINYINT      NOT NULL COMMENT '1完课 2签到 3考试奖励 4AI提问 5兑换扣减 6注册赠送 7积分活动',
   `change_value` INT          NOT NULL COMMENT '变动值（正为获得，负为消耗）',
   `description`  VARCHAR(200) DEFAULT NULL COMMENT '变动说明',
   `create_time`  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '发生时间',
@@ -286,6 +286,32 @@ CREATE TABLE `sign_record` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_user_date` (`user_id`, `sign_date`)
 ) ENGINE = InnoDB COMMENT = '签到记录表';
+
+-- 18.5 积分活动表（积分任务，学生每日可领取奖励）
+DROP TABLE IF EXISTS `points_activity`;
+CREATE TABLE `points_activity` (
+  `id`          BIGINT       NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `title`       VARCHAR(50)  NOT NULL COMMENT '活动名称',
+  `description` VARCHAR(200) DEFAULT NULL COMMENT '完成说明',
+  `icon`        VARCHAR(50)  DEFAULT NULL COMMENT '图标标识',
+  `reward`      INT          NOT NULL DEFAULT 0 COMMENT '奖励积分',
+  `enabled`     TINYINT      NOT NULL DEFAULT 1 COMMENT '0停用 1启用',
+  `sort_order`  INT          NOT NULL DEFAULT 0 COMMENT '排序',
+  PRIMARY KEY (`id`)
+) ENGINE = InnoDB COMMENT = '积分活动表';
+
+-- 18.6 积分活动领取记录表（每日限领一次）
+DROP TABLE IF EXISTS `points_activity_record`;
+CREATE TABLE `points_activity_record` (
+  `id`          BIGINT   NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `user_id`     BIGINT   NOT NULL COMMENT '学生',
+  `activity_id` BIGINT   NOT NULL COMMENT '活动',
+  `claim_date`  DATE     NOT NULL COMMENT '领取日期',
+  `reward`      INT      NOT NULL DEFAULT 0 COMMENT '实际到账积分',
+  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '领取时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_user_activity_date` (`user_id`, `activity_id`, `claim_date`)
+) ENGINE = InnoDB COMMENT = '积分活动领取记录表';
 
 -- ============================================================
 -- 七、运营域
@@ -346,12 +372,12 @@ INSERT INTO `chapter` (`id`, `course_id`, `title`, `sort_order`) VALUES
 
 -- 视频（使用公开可播放的示例视频，便于本地演示）
 INSERT INTO `video` (`id`, `chapter_id`, `title`, `url`, `duration`, `sort_order`) VALUES
-(1, 1, '1.1 开发环境搭建', '/api/files/videos/mov_bbb.mp4', 10, 1),
-(2, 1, '1.2 变量与数据类型', '/api/files/videos/movie.mp4', 12, 2),
-(3, 2, '2.1 类与对象', '/api/files/videos/mov_bbb.mp4', 10, 1),
-(4, 2, '2.2 封装与访问控制', '/api/files/videos/movie.mp4', 12, 2),
-(5, 2, '2.3 继承与多态', '/api/files/videos/mov_bbb.mp4', 10, 3),
-(6, 3, '1.1 NumPy 数组基础', '/api/files/videos/movie.mp4', 12, 1);
+(1, 1, '1.1 开发环境搭建', '/api/files/videos/mov_bbb.mp4', 1080, 1),
+(2, 1, '1.2 变量与数据类型', '/api/files/videos/movie.mp4', 1320, 2),
+(3, 2, '2.1 类与对象', '/api/files/videos/mov_bbb.mp4', 1500, 1),
+(4, 2, '2.2 封装与访问控制', '/api/files/videos/movie.mp4', 1280, 2),
+(5, 2, '2.3 继承与多态', '/api/files/videos/mov_bbb.mp4', 1560, 3),
+(6, 3, '1.1 NumPy 数组基础', '/api/files/videos/movie.mp4', 1450, 1);
 
 -- 选课
 INSERT INTO `course_enrollment` (`student_id`, `course_id`, `progress`) VALUES
@@ -362,7 +388,7 @@ INSERT INTO `course_enrollment` (`student_id`, `course_id`, `progress`) VALUES
 INSERT INTO `question` (`course_id`, `chapter_id`, `type`, `content`, `options`, `answer`, `analysis`, `source`) VALUES
 (1, 1, 1, 'Java 中哪个关键字用于定义常量？', '["static", "final", "const", "constant"]', 'B',
  'final 修饰的变量一旦赋值不可修改，常用于定义常量。', 1),
-(1, 1, 3, 'Java 是纯面向对象语言，基本数据类型也是对象。', NULL, '错',
+(1, 1, 3, 'Java 是纯面向对象语言，基本数据类型也是对象。', '["对", "错"]', '错',
  'Java 有 8 种基本数据类型（如 int、double），它们不是对象，包装类才是。', 1),
 (1, 2, 1, '下列关于继承的说法，正确的是？', '["Java 支持多继承", "子类可以访问父类所有成员", "Java 中一个类只能有一个父类", "继承使用 implements 关键字"]', 'C',
  'Java 类是单继承（可多实现接口），继承使用 extends 关键字，私有成员不可直接访问。', 1),
@@ -378,6 +404,13 @@ INSERT INTO `points_rule` (`rule_key`, `rule_value`, `daily_limit`, `enabled`) V
 ('exam_pass', 20, 0, 1),
 ('ai_ask', 2, 10, 1),
 ('register_gift', 100, 0, 1);
+
+-- 积分活动（任务）
+INSERT INTO `points_activity` (`title`, `description`, `icon`, `reward`, `enabled`, `sort_order`) VALUES
+('完善个人资料', '完善昵称与头像，让同学认识你', 'profile', 10, 1, 1),
+('分享课程给好友', '把喜欢的课程分享给好友', 'share', 5, 1, 2),
+('撰写学习笔记', '为任意视频撰写一篇学习笔记', 'note', 5, 1, 3),
+('完成章节学习', '学完任意一个章节的全部视频', 'chapter', 10, 1, 4);
 
 -- 积分账户（学生注册赠送 100，student1 额外通过完课获得 30）
 INSERT INTO `points_account` (`user_id`, `balance`, `total_earned`, `total_spent`) VALUES

@@ -9,3 +9,9 @@ export const enrollCourse = (courseId) => request.post(`/course/enroll/${courseI
 // 学习进度接口
 export const reportProgress = (data) => request.post('/study/progress', data)
 export const resumePosition = (videoId) => request.get(`/study/resume/${videoId}`)
+
+// 学习笔记接口
+export const getNote = (videoId) => request.get(`/study/note/${videoId}`)
+export const saveNote = (data) => request.post('/study/note', data)
+export const deleteNote = (id) => request.delete(`/study/note/${id}`)
+export const myNotes = () => request.get('/study/notes')

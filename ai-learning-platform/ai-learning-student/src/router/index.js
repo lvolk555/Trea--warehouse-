@@ -15,6 +15,7 @@ const routes = [
       { path: 'course/:courseId', name: 'CourseDetail', component: () => import('../views/course/DetailView.vue') },
       { path: 'my-courses', name: 'MyCourses', component: () => import('../views/course/MyCoursesView.vue') },
       { path: 'study/:courseId/:videoId', name: 'Study', component: () => import('../views/study/StudyView.vue') },
+      { path: 'notes', name: 'Notes', component: () => import('../views/study/NotesView.vue') },
       // 练习与考试
       { path: 'practice', name: 'Practice', component: () => import('../views/practice/PracticeView.vue') },
       { path: 'error-book', name: 'ErrorBook', component: () => import('../views/practice/ErrorBookView.vue') },

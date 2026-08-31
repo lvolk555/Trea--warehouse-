@@ -176,7 +176,7 @@ onMounted(() => {
       <n-space align="center" style="margin-bottom: 12px">
         <n-text depth="2">答疑课程：</n-text>
         <n-select v-model:value="selectedCourse" clearable placeholder="通用答疑（不绑定课程）"
-          style="width: 260px" size="small"
+          class="course-select" size="small"
           :options="courses.map(c => ({ label: c.title, value: c.id }))" />
       </n-space>
 
@@ -195,15 +195,15 @@ onMounted(() => {
       </div>
 
       <!-- 输入区 -->
-      <n-space style="margin-top: 12px">
-        <n-input v-model:value="question" type="textarea" :rows="2" placeholder="输入你的问题，Enter 发送"
-          :disabled="streaming" @keydown.enter.prevent="sendQuestion" />
-      </n-space>
-      <n-space justify="end" style="margin-top: 8px">
-        <n-button type="primary" :loading="streaming" :disabled="!question.trim()" @click="sendQuestion">
+      <div class="input-row">
+        <div class="input-wrap">
+          <n-input v-model:value="question" type="textarea" :rows="2" placeholder="输入你的问题，Enter 发送"
+            :disabled="streaming" @keydown.enter.prevent="sendQuestion" />
+        </div>
+        <n-button class="send-btn" type="primary" :loading="streaming" :disabled="!question.trim()" @click="sendQuestion">
           {{ streaming ? 'AI 回答中…' : '发送' }}
         </n-button>
-      </n-space>
+      </div>
     </n-card>
   </div>
 </template>
@@ -223,6 +223,26 @@ onMounted(() => {
   flex: 1;
   display: flex;
   flex-direction: column;
+}
+.input-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  margin-top: 12px;
+}
+.input-wrap {
+  flex: 1;
+  min-width: 0;
+}
+.send-btn {
+  flex-shrink: 0;
+  height: 40px;
+  min-width: 88px;
+}
+.course-select {
+  width: 260px;
+  min-width: 160px;
+  flex-shrink: 0;
 }
 .session-item {
   padding: 10px 12px;
@@ -293,5 +313,21 @@ onMounted(() => {
 }
 @keyframes blink {
   50% { opacity: 0; }
+}
+@media (max-width: 768px) {
+  .ai-chat-page {
+    flex-direction: column;
+    height: auto;
+  }
+  .session-panel {
+    width: 100%;
+    max-height: 180px;
+  }
+  .chat-panel {
+    min-height: 65vh;
+  }
+  .course-select {
+    width: 100%;
+  }
 }
 </style>

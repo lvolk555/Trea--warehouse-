@@ -197,7 +197,11 @@ public class QuestionService {
         vo.setChapterId(question.getChapterId());
         vo.setType(question.getType());
         vo.setContent(question.getContent());
-        vo.setOptions(parseOptions(question.getOptions()));
+        List<String> options = parseOptions(question.getOptions());
+        if (question.getType() == TYPE_JUDGE && options.isEmpty()) {
+            options = List.of("对", "错");
+        }
+        vo.setOptions(options);
         vo.setAnswer(question.getAnswer());
         vo.setAnalysis(question.getAnalysis());
         vo.setSource(question.getSource());
