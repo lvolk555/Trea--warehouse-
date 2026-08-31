@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
 import { courseDetail, enrollCourse } from '../../api/course'
 import { courseComments, publishComment } from '../../api/points'
+import ExchangeModal from '../../components/ExchangeModal.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -12,6 +13,10 @@ const message = useMessage()
 const loading = ref(false)
 const course = ref(null)
 const enrolling = ref(false)
+
+// 积分兑换弹窗
+const exchangeTarget = ref(null)
+const exchangeVisible = ref(false)
 
 // 评论区
 const comments = ref([])
@@ -39,8 +44,8 @@ async function loadComments() {
 
 async function handleEnroll() {
   if (course.value.priceType === 2) {
-    message.info('该课程为积分兑换课程，请到积分中心兑换')
-    router.push('/points')
+    exchangeTarget.value = course.value
+    exchangeVisible.value = true
     return
   }
   enrolling.value = true
@@ -53,6 +58,11 @@ async function handleEnroll() {
   } finally {
     enrolling.value = false
   }
+}
+
+function onExchanged() {
+  loadDetail()
+  loadComments()
 }
 
 async function handlePublishComment() {
@@ -161,6 +171,9 @@ onMounted(() => {
       </n-card>
     </div>
   </n-spin>
+
+  <!-- 积分兑换弹窗：选择优惠券抵扣 -->
+  <ExchangeModal v-model:show="exchangeVisible" :course="exchangeTarget" @success="onExchanged" />
 </template>
 
 <style scoped>
