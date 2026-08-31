@@ -60,7 +60,7 @@ onMounted(loadData)
         <n-grid-item v-for="course in courses" :key="course.id">
           <n-card hoverable class="course-card" @click="goDetail(course)">
             <template #cover>
-              <img :src="course.cover || 'https://picsum.photos/seed/' + course.id + '/640/360'" class="cover" />
+              <img :src="course.cover" class="cover" />
             </template>
             <div class="title">{{ course.title }}</div>
             <div class="meta">

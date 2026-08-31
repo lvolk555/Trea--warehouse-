@@ -331,11 +331,11 @@ INSERT INTO `user` (`id`, `username`, `password`, `nickname`, `role`, `status`) 
 
 -- 课程：1 免费已上架 / 1 积分兑换已上架 / 1 待审核
 INSERT INTO `course` (`id`, `teacher_id`, `title`, `cover`, `category`, `description`, `price_type`, `points_price`, `status`) VALUES
-(1, 2, 'Java 面向对象程序设计', 'https://picsum.photos/seed/java/640/360', '编程',
+(1, 2, 'Java 面向对象程序设计', '/api/files/course-cover-java.jpg', '编程',
  '本课程系统讲解 Java 面向对象编程，涵盖类与对象、封装、继承、多态、接口与异常处理，配合大量代码示例，帮助初学者建立扎实的 OOP 基础。', 1, 0, 1),
-(2, 2, 'Python 数据分析入门', 'https://picsum.photos/seed/python/640/360', '编程',
+(2, 2, 'Python 数据分析入门', '/api/files/course-cover-python.jpg', '编程',
  '本课程介绍 Python 数据分析基础，涵盖 NumPy、Pandas 数据处理与 Matplotlib 可视化，适合零基础学员入门数据科学。', 2, 800, 1),
-(3, 2, 'Web 前端开发实战', 'https://picsum.photos/seed/web/640/360', '编程',
+(3, 2, 'Web 前端开发实战', '/api/files/course-cover-web.jpg', '编程',
  '本课程讲解 HTML、CSS、JavaScript 前端三件套，并通过实战项目掌握页面开发流程。', 1, 0, 0);
 
 -- 章节（课程 1 两章，课程 2 一章）
@@ -346,12 +346,12 @@ INSERT INTO `chapter` (`id`, `course_id`, `title`, `sort_order`) VALUES
 
 -- 视频（使用公开可播放的示例视频，便于本地演示）
 INSERT INTO `video` (`id`, `chapter_id`, `title`, `url`, `duration`, `sort_order`) VALUES
-(1, 1, '1.1 开发环境搭建', 'https://www.w3schools.com/html/mov_bbb.mp4', 10, 1),
-(2, 1, '1.2 变量与数据类型', 'https://www.w3schools.com/html/movie.mp4', 12, 2),
-(3, 2, '2.1 类与对象', 'https://www.w3schools.com/html/mov_bbb.mp4', 10, 1),
-(4, 2, '2.2 封装与访问控制', 'https://www.w3schools.com/html/movie.mp4', 12, 2),
-(5, 2, '2.3 继承与多态', 'https://www.w3schools.com/html/mov_bbb.mp4', 10, 3),
-(6, 3, '1.1 NumPy 数组基础', 'https://www.w3schools.com/html/movie.mp4', 12, 1);
+(1, 1, '1.1 开发环境搭建', '/api/files/videos/mov_bbb.mp4', 10, 1),
+(2, 1, '1.2 变量与数据类型', '/api/files/videos/movie.mp4', 12, 2),
+(3, 2, '2.1 类与对象', '/api/files/videos/mov_bbb.mp4', 10, 1),
+(4, 2, '2.2 封装与访问控制', '/api/files/videos/movie.mp4', 12, 2),
+(5, 2, '2.3 继承与多态', '/api/files/videos/mov_bbb.mp4', 10, 3),
+(6, 3, '1.1 NumPy 数组基础', '/api/files/videos/movie.mp4', 12, 1);
 
 -- 选课
 INSERT INTO `course_enrollment` (`student_id`, `course_id`, `progress`) VALUES

@@ -93,7 +93,7 @@ onMounted(() => {
       <!-- 课程头部 -->
       <n-card>
         <div class="head">
-          <img :src="course.cover || 'https://picsum.photos/seed/' + course.id + '/640/360'" class="cover" />
+          <img :src="course.cover" class="cover" />
           <div class="info">
             <h1>{{ course.title }}</h1>
             <n-space align="center" style="margin: 8px 0">

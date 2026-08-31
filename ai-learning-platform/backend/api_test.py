@@ -71,8 +71,9 @@ def test_auth():
 # ==================== 2. 课程模块 ====================
 def test_course(tk_student):
     print("\n== 2. 课程模块 ==")
-    s, r = call("GET", "/course/square", token=tk_student)
-    check("课程广场返回已上架课程", r["code"] == 200 and isinstance(r["data"], (list, dict)))
+    # 课程广场已改为 POST + JSON 参数（中文分类经请求体传输，避免 URL 编码 400）
+    s, r = call("POST", "/course/square", token=tk_student, body={"page": 1, "size": 8})
+    check("课程广场返回已上架课程", r["code"] == 200 and isinstance(r["data"], dict) and "records" in r["data"])
     s, r = call("GET", "/course/1", token=tk_student)
     check("课程详情含章节视频", r["code"] == 200 and r["data"]["title"])
     s, r = call("GET", "/course/99999", token=tk_student)

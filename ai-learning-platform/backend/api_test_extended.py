@@ -93,7 +93,7 @@ def test_course_lifecycle(tk_teacher, tk_admin, tk_student):
     check("管理员下架课程", r["code"] == 200 and r["data"]["status"] == 2, str(r.get("data", {}).get("status")))
 
     # 下架后课程广场不可见
-    s, r = call("GET", "/course/square", token=tk_student, params={"keyword": "测试课程-自动化"})
+    s, r = call("POST", "/course/square", token=tk_student, body={"page": 1, "size": 8, "keyword": "测试课程-自动化"})
     records = r.get("data", {}).get("records", [])
     check("下架课程不在广场", all(c["id"] != new_course_id for c in records))
 
@@ -330,14 +330,14 @@ def test_profile_logout(tk_student):
     check("登出后 token 失效", r.get("code") == 401, str(r))
 
 
-# ==================== 8. AI 接口降级 ====================
+# ==================== 8. AI 接口（已配置 API Key，走真实大模型） ====================
 def test_ai_degraded(tk_student, tk_teacher):
-    print("\n== 8. AI 接口降级（未配置 API Key） ==")
+    print("\n== 8. AI 接口（已配置 API Key） ==")
     # 会话列表
     s, r = call("GET", "/student/ai/sessions", token=tk_student)
     check("AI 会话列表", r["code"] == 200)
 
-    # 提问（SSE 降级）：无 API Key 时返回降级提示
+    # 提问（SSE 流式）：已配置 API Key 时返回真实流式回答，首帧含 [SESSION:id]
     import urllib.request as ur
     req = ur.Request(BASE + "/student/ai/ask",
                      data=json.dumps({"question": "什么是机器学习？"}).encode(),
@@ -346,11 +346,11 @@ def test_ai_degraded(tk_student, tk_teacher):
     req.add_header("Authorization", "Bearer " + tk_student)
     req.add_header("Accept", "text/event-stream")
     try:
-        with ur.urlopen(req, timeout=10) as resp:
+        with ur.urlopen(req, timeout=60) as resp:
             body = resp.read().decode()
-            check("AI 提问返回降级提示", "暂未配置" in body or "SESSION" in body, body[:200])
+            check("AI 提问返回流式回答", "SESSION" in body, body[:200])
     except Exception as e:
-        check("AI 提问返回降级提示", False, str(e))
+        check("AI 提问返回流式回答", False, str(e))
 
     # 会话列表应有新会话
     s, r = call("GET", "/student/ai/sessions", token=tk_student)
@@ -362,10 +362,10 @@ def test_ai_degraded(tk_student, tk_teacher):
         s, r = call("DELETE", f"/student/ai/sessions/{sid}", token=tk_student)
         check("删除 AI 会话", r["code"] == 200)
 
-    # 教师 AI 出题（无 API Key → 报错）
+    # 教师 AI 出题（已配置 API Key → 返回生成的题目）
     s, r = call("POST", "/teacher/ai/generate", token=tk_teacher,
                 body={"courseId": 1, "chapterId": 1, "type": 1, "count": 2})
-    check("AI 出题未配置时报错", r["code"] != 200, str(r))
+    check("AI 出题成功返回题目", r["code"] == 200 and isinstance(r.get("data"), list) and len(r["data"]) > 0, str(r)[:200])
 
     # 待批改列表（无简答题提交，应为空）
     s, r = call("GET", "/teacher/ai/pending-grades", token=tk_teacher)

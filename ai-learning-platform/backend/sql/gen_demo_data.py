@@ -78,9 +78,11 @@ courses = [
     (9, teacher2_id, "大学英语四级冲刺", "外语", "词汇、听力、阅读、写作四模块专项突破，真题精讲。", 2, 500, 1, 2),
     (10, teacher2_id, "UI 设计基础", "设计", "设计原则、配色、排版与 Figma 实操，零基础可学。", 1, 0, 1, 2),
 ]
+# 课程封面使用本地图片（/api/files/...），避免依赖外网 picsum.photos
+cover_map = {4: "mysql", 5: "algorithm", 6: "linux", 7: "math", 8: "linear", 9: "english", 10: "ui"}
 add("INSERT INTO `course` (`id`, `teacher_id`, `title`, `cover`, `category`, `description`, `price_type`, `points_price`, `status`, `create_time`) VALUES")
 add(",\n".join(
-    f"({c[0]}, {c[1]}, {sql_str(c[2])}, {sql_str('https://picsum.photos/seed/c' + str(c[0]) + '/640/360')}, "
+    f"({c[0]}, {c[1]}, {sql_str(c[2])}, {sql_str('/api/files/course-cover-' + cover_map[c[0]] + '.jpg')}, "
     f"{sql_str(c[3])}, {sql_str(c[4])}, {c[5]}, {c[6]}, {c[7]}, {sql_str(dt(random.randint(10, 13), 10))})"
     for c in courses) + ";")
 add("")
@@ -109,7 +111,7 @@ for c in courses:
         for vi in range(random.randint(2, 3)):
             duration = random.randint(600, 1500)
             video_rows.append((video_id, chapter_id, f"{ci+1}.{vi+1} 第{ci+1}章第{vi+1}节",
-                               f"https://www.w3schools.com/html/mov_bbb.mp4", duration, vi + 1))
+                               "/api/files/videos/mov_bbb.mp4", duration, vi + 1))
             vids.append((video_id, duration))
             video_id += 1
         course_structure[cid].append(vids)

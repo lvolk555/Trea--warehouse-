@@ -8,12 +8,16 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.netty.http.client.HttpClient;
+import reactor.netty.transport.ProxyProvider;
 
+import java.net.URI;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -40,9 +44,45 @@ public class ZhipuAiClient {
         this.objectMapper = objectMapper;
         this.webClient = WebClient.builder()
                 .baseUrl(baseUrl)
+                // 支持代理：读取标准代理环境变量，保证需要代理出网的环境（如沙箱）也能访问 AI 服务
+                .clientConnector(new ReactorClientHttpConnector(buildHttpClient()))
                 // 大模型输出较长，放宽响应体大小限制
                 .codecs(c -> c.defaultCodecs().maxInMemorySize(4 * 1024 * 1024))
                 .build();
+    }
+
+    /** 构建 HttpClient，优先使用代理环境变量（HTTPS_PROXY/HTTP_PROXY 等）出网；未设置时直连。 */
+    private HttpClient buildHttpClient() {
+        HttpClient client = HttpClient.create();
+        String proxyUrl = firstNonBlank(
+                System.getenv("HTTPS_PROXY"),
+                System.getenv("https_proxy"),
+                System.getenv("HTTP_PROXY"),
+                System.getenv("http_proxy"),
+                System.getenv("ALL_PROXY"));
+        if (proxyUrl == null || proxyUrl.isBlank()) {
+            return client;
+        }
+        try {
+            URI uri = URI.create(proxyUrl);
+            String host = uri.getHost();
+            if (host != null) {
+                int port = uri.getPort() > 0 ? uri.getPort() : 80;
+                client = client.proxy(p -> p.type(ProxyProvider.Proxy.HTTP).host(host).port(port));
+            }
+        } catch (Exception e) {
+            log.warn("解析代理地址失败，忽略代理配置: {}", proxyUrl, e);
+        }
+        return client;
+    }
+
+    private static String firstNonBlank(String... values) {
+        for (String v : values) {
+            if (v != null && !v.isBlank()) {
+                return v;
+            }
+        }
+        return null;
     }
 
     /** API Key 是否已配置（未配置时各功能走降级提示） */
