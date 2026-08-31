@@ -114,6 +114,12 @@ const exchangeDiscount = computed(() => {
   return Math.max(0, price - exchangePay.value)
 })
 
+// 优惠券下拉选项（含「不使用优惠券」）
+const couponOptions = computed(() => [
+  { label: '不使用优惠券', value: null },
+  ...usableCoupons.value.map(c => ({ label: `${c.name}（${couponText(c)}）`, value: c.id }))
+])
+
 function openExchange(course) {
   exchangeTarget.value = course
   selectedCouponId.value = null
@@ -122,6 +128,13 @@ function openExchange(course) {
 
 async function confirmExchange() {
   const course = exchangeTarget.value
+  if (!course) return
+  const pay = exchangePay.value
+  const balance = account.value?.balance ?? 0
+  if (balance < pay) {
+    message.error(`积分不足，无法兑换（当前 ${balance}，需 ${pay}）`)
+    return
+  }
   try {
     await exchangeCourse(course.id, selectedCouponId.value || undefined)
     message.success('兑换成功，已自动选课')
@@ -339,6 +352,32 @@ onMounted(() => {
         <n-empty v-else description="暂无优惠券，去积分活动领取吧" style="margin: 24px 0" />
       </n-tab-pane>
     </n-tabs>
+
+    <!-- 兑换课程弹窗：选择优惠券抵扣 -->
+    <n-modal v-model:show="exchangeVisible" preset="card" title="兑换课程" style="width: 480px">
+      <div v-if="exchangeTarget" class="exchange-box">
+        <div class="course-title">{{ exchangeTarget.title }}</div>
+        <div class="price-info">
+          <div class="row"><span>原价</span><span>{{ exchangeTarget.pointsPrice }} 积分</span></div>
+          <div v-if="exchangeDiscount > 0" class="row discount"><span>优惠券抵扣</span><span>-{{ exchangeDiscount }} 积分</span></div>
+          <div class="row pay"><span>实付</span><span>{{ exchangePay }} 积分</span></div>
+          <div class="row balance"><span>当前积分</span><span>{{ account?.balance ?? 0 }}</span></div>
+        </div>
+        <div class="coupon-select">
+          <div class="select-label">选择优惠券</div>
+          <n-select v-model:value="selectedCouponId" :options="couponOptions" placeholder="选择优惠券" />
+          <n-text v-if="usableCoupons.length === 0" depth="3" style="font-size: 12px">
+            暂无可用优惠券，去「积分活动」领取
+          </n-text>
+        </div>
+      </div>
+      <template #footer>
+        <n-space justify="end">
+          <n-button @click="exchangeVisible = false">取消</n-button>
+          <n-button type="primary" @click="confirmExchange">确认兑换</n-button>
+        </n-space>
+      </template>
+    </n-modal>
   </div>
 </template>
 
@@ -426,6 +465,42 @@ onMounted(() => {
 .muted {
   color: #9ca3af;
   font-size: 13px;
+}
+.exchange-box .course-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+.price-info {
+  background: #f7f7fa;
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+}
+.price-info .row {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  font-size: 14px;
+}
+.price-info .discount {
+  color: #18a058;
+}
+.price-info .pay {
+  font-weight: 700;
+  color: #6366f1;
+  border-top: 1px dashed #e0e0e6;
+  margin-top: 6px;
+  padding-top: 8px;
+}
+.price-info .balance {
+  color: #9ca3af;
+  font-size: 13px;
+}
+.coupon-select .select-label {
+  font-size: 13px;
+  color: #6b7280;
+  margin-bottom: 6px;
 }
 .coupon-card {
   display: flex;
