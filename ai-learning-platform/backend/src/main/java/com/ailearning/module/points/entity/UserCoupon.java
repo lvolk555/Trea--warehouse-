@@ -40,5 +40,8 @@ public class UserCoupon {
 
     private LocalDateTime expireTime;
 
+    /** 核销（使用）时间 */
+    private LocalDateTime usedTime;
+
     private LocalDateTime createTime;
 }

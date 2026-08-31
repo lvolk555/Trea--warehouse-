@@ -5,7 +5,7 @@ export const pointsAccount = () => request.get('/points/account')
 export const pointsRecords = (params) => request.get('/points/records', { params })
 export const dailySign = () => request.post('/points/sign')
 export const signMonth = () => request.get('/points/sign/month')
-export const exchangeCourse = (courseId) => request.post(`/points/exchange/${courseId}`)
+export const exchangeCourse = (courseId, couponId) => request.post(`/points/exchange/${courseId}`, null, { params: { couponId } })
 export const myExchanges = () => request.get('/points/exchange/my')
 
 // 积分活动

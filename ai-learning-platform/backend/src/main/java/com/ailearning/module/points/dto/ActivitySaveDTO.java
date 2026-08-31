@@ -17,6 +17,9 @@ public class ActivitySaveDTO {
     /** 活动类型：1积分任务 2优惠券 */
     private Integer activityType;
 
+    /** 任务标识（积分任务）：profile / ai_ask / chapter_finish / exam_pass */
+    private String taskKey;
+
     /** 积分奖励（积分任务） */
     private Integer reward;
 

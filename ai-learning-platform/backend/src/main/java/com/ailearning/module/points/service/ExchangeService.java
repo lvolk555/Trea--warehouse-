@@ -7,7 +7,9 @@ import com.ailearning.module.course.mapper.CourseMapper;
 import com.ailearning.module.course.service.CourseService;
 import com.ailearning.module.course.service.EnrollmentService;
 import com.ailearning.module.points.entity.CourseExchangeRecord;
+import com.ailearning.module.points.entity.UserCoupon;
 import com.ailearning.module.points.mapper.CourseExchangeRecordMapper;
+import com.ailearning.module.points.mapper.UserCouponMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -15,11 +17,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * 积分商城兑换服务：校验课程 → 防重复兑换 → 事务内扣积分 + 自动选课 + 记流水
+ * 积分商城兑换服务：校验课程 → 防重复兑换 → 校验/核销优惠券 → 事务内扣积分 + 自动选课 + 记流水
  *
+ * 优惠券核销：满减券（满 threshold 减 value）、折扣券（value 折，如 85 = 8.5 折），
+ * 抵扣后按实际应付积分扣减；券标记已使用并记录核销时间。
  * 一致性设计：整个兑换在同一事务内完成，任一步失败全部回滚；
  * 扣积分使用条件 UPDATE（balance >= cost）兜底并发超扣。
  */
@@ -29,14 +34,15 @@ public class ExchangeService {
 
     private final CourseMapper courseMapper;
     private final CourseExchangeRecordMapper exchangeMapper;
+    private final UserCouponMapper couponMapper;
     private final PointsService pointsService;
     private final EnrollmentService enrollmentService;
 
     /**
-     * 学生兑换积分课程
+     * 学生兑换积分课程（可选使用优惠券抵扣）
      */
     @Transactional(rollbackFor = Exception.class)
-    public CourseExchangeRecord exchange(Long courseId) {
+    public CourseExchangeRecord exchange(Long courseId, Long couponId) {
         UserContext.checkRole(UserContext.ROLE_STUDENT);
         long studentId = UserContext.userId();
 
@@ -57,18 +63,68 @@ public class ExchangeService {
         }
 
         int cost = course.getPointsPrice();
-        // 扣积分（余额不足抛异常，事务回滚）
-        pointsService.deduct(studentId, cost, "兑换课程《" + course.getTitle() + "》");
+        int discount = 0;
+        UserCoupon usedCoupon = null;
+        if (couponId != null) {
+            usedCoupon = resolveUsableCoupon(studentId, couponId, cost);
+            discount = calcDiscount(usedCoupon, cost);
+        }
+
+        int pay = Math.max(0, cost - discount);
+        if (pay > 0) {
+            pointsService.deduct(studentId, pay, "兑换课程《" + course.getTitle() + "》");
+        }
         // 自动选课（幂等）
         enrollmentService.doEnroll(studentId, courseId);
+
+        // 核销优惠券
+        if (usedCoupon != null) {
+            usedCoupon.setStatus(1);
+            usedCoupon.setUsedTime(LocalDateTime.now());
+            couponMapper.updateById(usedCoupon);
+        }
 
         CourseExchangeRecord record = new CourseExchangeRecord();
         record.setUserId(studentId);
         record.setCourseId(courseId);
-        record.setPointsCost(cost);
+        record.setPointsCost(pay);
+        record.setCouponId(couponId);
+        record.setDiscount(discount > 0 ? discount : null);
         record.setStatus(1);
         exchangeMapper.insert(record);
         return record;
+    }
+
+    /** 校验优惠券归属/状态/过期/门槛，返回可用的券 */
+    private UserCoupon resolveUsableCoupon(long userId, Long couponId, int cost) {
+        UserCoupon c = couponMapper.selectById(couponId);
+        if (c == null || !c.getUserId().equals(userId)) {
+            throw new BizException("优惠券不存在");
+        }
+        if (c.getStatus() != 0) {
+            throw new BizException("优惠券不可用");
+        }
+        if (c.getExpireTime() != null && c.getExpireTime().isBefore(LocalDateTime.now())) {
+            c.setStatus(2);
+            couponMapper.updateById(c);
+            throw new BizException("优惠券已过期");
+        }
+        // 满减券校验使用门槛
+        if (c.getType() == 1 && c.getThreshold() != null && c.getThreshold() > 0 && cost < c.getThreshold()) {
+            throw new BizException("未满足优惠券使用门槛");
+        }
+        return c;
+    }
+
+    /** 计算抵扣积分 */
+    private int calcDiscount(UserCoupon c, int cost) {
+        if (c.getType() == 2) {
+            // 折扣券：value 如 85 → 应付 cost*0.85
+            int pay = (int) Math.round(cost * c.getValue() / 100.0);
+            return Math.max(0, cost - pay);
+        }
+        // 满减券：减 value（不超过课程原价）
+        return Math.min(c.getValue() == null ? 0 : c.getValue(), cost);
     }
 
     /**

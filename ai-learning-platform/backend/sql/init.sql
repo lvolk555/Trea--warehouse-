@@ -269,7 +269,9 @@ CREATE TABLE `course_exchange_record` (
   `id`          BIGINT   NOT NULL AUTO_INCREMENT COMMENT '主键',
   `user_id`     BIGINT   NOT NULL COMMENT '兑换学生',
   `course_id`   BIGINT   NOT NULL COMMENT '兑换课程',
-  `points_cost` INT      NOT NULL COMMENT '消耗积分',
+  `points_cost` INT      NOT NULL COMMENT '实际消耗积分（抵扣后）',
+  `coupon_id`   BIGINT   DEFAULT NULL COMMENT '使用的优惠券',
+  `discount`    INT      DEFAULT NULL COMMENT '优惠券抵扣积分',
   `status`      TINYINT  NOT NULL DEFAULT 1 COMMENT '1成功 2失败（积分不足）',
   `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '兑换时间',
   PRIMARY KEY (`id`),
@@ -295,11 +297,12 @@ CREATE TABLE `points_activity` (
   `description`        VARCHAR(200) DEFAULT NULL COMMENT '完成说明',
   `icon`               VARCHAR(50)  DEFAULT NULL COMMENT '图标标识',
   `activity_type`      TINYINT      NOT NULL DEFAULT 1 COMMENT '活动类型：1积分任务 2优惠券',
+  `task_key`           VARCHAR(50)  DEFAULT NULL COMMENT '任务标识（积分任务）：profile/ai_ask/chapter_finish/exam_pass',
   `reward`             INT          NOT NULL DEFAULT 0 COMMENT '奖励积分（积分任务）',
   `coupon_name`        VARCHAR(50)  DEFAULT NULL COMMENT '券名称（优惠券）',
   `coupon_type`        TINYINT      DEFAULT 1 COMMENT '券类型：1满减券 2折扣券',
-  `coupon_value`       INT          DEFAULT NULL COMMENT '券值：满减为减免金额，折扣为折扣(85=8.5折)',
-  `coupon_threshold`   INT          DEFAULT 0 COMMENT '使用门槛（满多少可用，0无门槛）',
+  `coupon_value`       INT          DEFAULT NULL COMMENT '券值：满减为减免积分，折扣为折扣(85=8.5折)',
+  `coupon_threshold`   INT          DEFAULT 0 COMMENT '使用门槛（满多少积分可用，0无门槛）',
   `coupon_expire_days` INT          DEFAULT 30 COMMENT '券有效期（天）',
   `enabled`            TINYINT      NOT NULL DEFAULT 0 COMMENT '0未发布/停用 1已发布',
   `sort_order`         INT          NOT NULL DEFAULT 0 COMMENT '排序',
@@ -331,6 +334,7 @@ CREATE TABLE `user_coupon` (
   `threshold`   INT         NOT NULL DEFAULT 0 COMMENT '使用门槛',
   `status`      TINYINT     NOT NULL DEFAULT 0 COMMENT '0未使用 1已使用 2已过期',
   `expire_time` DATETIME    DEFAULT NULL COMMENT '过期时间',
+  `used_time`   DATETIME    DEFAULT NULL COMMENT '核销（使用）时间',
   `create_time` DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '领取时间',
   PRIMARY KEY (`id`),
   KEY `idx_user` (`user_id`)
@@ -428,16 +432,16 @@ INSERT INTO `points_rule` (`rule_key`, `rule_value`, `daily_limit`, `enabled`) V
 ('ai_ask', 2, 10, 1),
 ('register_gift', 100, 0, 1);
 
--- 积分活动（任务 + 优惠券，贴近真实市场运营）
+-- 积分活动（积分任务需真实完成才可领取 + 优惠券，积分即金额，券以积分结算）
 INSERT INTO `points_activity`
-(`title`, `description`, `icon`, `activity_type`, `reward`, `coupon_name`, `coupon_type`, `coupon_value`, `coupon_threshold`, `coupon_expire_days`, `enabled`, `sort_order`) VALUES
-('完善个人资料', '完善昵称与头像，让同学认识你', 'profile', 1, 10, NULL, NULL, NULL, 0, NULL, 1, 1),
-('完成 AI 答疑', '向 AI 助手提问并完成一次答疑', 'robot', 1, 5, NULL, NULL, NULL, 0, NULL, 1, 2),
-('完成章节学习', '学完任意一个章节的全部视频', 'chapter', 1, 15, NULL, NULL, NULL, 0, NULL, 1, 3),
-('邀请好友注册', '邀请同学注册并完成首次登录', 'invite', 1, 30, NULL, NULL, NULL, 0, NULL, 1, 4),
-('新人无门槛券', '新用户专享，无门槛立减 10 元', 'coupon', 2, 0, '新人立减券', 1, 10, 0, 7, 1, 5),
-('课程满减券', '全场课程满 500 减 50', 'coupon', 2, 0, '课程满减券', 1, 50, 500, 30, 1, 6),
-('全场折扣券', '积分商城全场 8.5 折优惠', 'discount', 2, 0, '全场折扣券', 2, 85, 0, 15, 1, 7);
+(`title`, `description`, `icon`, `activity_type`, `task_key`, `reward`, `coupon_name`, `coupon_type`, `coupon_value`, `coupon_threshold`, `coupon_expire_days`, `enabled`, `sort_order`) VALUES
+('完善个人资料', '完善昵称与头像，让同学认识你', 'profile', 1, 'profile', 10, NULL, NULL, NULL, 0, NULL, 1, 1),
+('完成 AI 答疑', '向 AI 助手提问并完成一次答疑', 'robot', 1, 'ai_ask', 5, NULL, NULL, NULL, 0, NULL, 1, 2),
+('完成章节学习', '学完任意一个章节的全部视频', 'chapter', 1, 'chapter_finish', 15, NULL, NULL, NULL, 0, NULL, 1, 3),
+('通过一次考试', '完成任意一次测验并达到 60 分', 'exam', 1, 'exam_pass', 20, NULL, NULL, NULL, 0, NULL, 1, 4),
+('新人无门槛券', '新用户专享，兑换课程立减 10 积分', 'coupon', 2, NULL, 0, '新人立减券', 1, 10, 0, 7, 1, 5),
+('课程满减券', '兑换课程满 500 积分减 50 积分', 'coupon', 2, NULL, 0, '课程满减券', 1, 50, 500, 30, 1, 6),
+('全场折扣券', '兑换任意课程 8.5 折优惠', 'discount', 2, NULL, 0, '全场折扣券', 2, 85, 0, 15, 1, 7);
 
 -- 积分账户（学生注册赠送 100，student1 额外通过完课获得 30）
 INSERT INTO `points_account` (`user_id`, `balance`, `total_earned`, `total_spent`) VALUES

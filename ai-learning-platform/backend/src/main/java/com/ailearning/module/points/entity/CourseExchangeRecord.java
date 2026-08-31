@@ -24,6 +24,12 @@ public class CourseExchangeRecord {
     /** 消耗积分 */
     private Integer pointsCost;
 
+    /** 使用的优惠券（可空） */
+    private Long couponId;
+
+    /** 优惠券抵扣的积分（可空） */
+    private Integer discount;
+
     /** 1成功 2失败（积分不足） */
     private Integer status;
 

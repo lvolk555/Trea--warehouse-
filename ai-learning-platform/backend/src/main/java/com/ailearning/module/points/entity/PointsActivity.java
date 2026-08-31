@@ -25,6 +25,9 @@ public class PointsActivity {
     /** 活动类型：1积分任务 2优惠券 */
     private Integer activityType;
 
+    /** 任务标识（积分任务）：profile完善资料 / ai_ask完成AI答疑 / chapter_finish完成章节 / exam_pass考试及格 */
+    private String taskKey;
+
     /** 奖励积分（积分任务） */
     private Integer reward;
 

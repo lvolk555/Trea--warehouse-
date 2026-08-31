@@ -1,11 +1,10 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useMessage, useDialog } from 'naive-ui'
+import { useMessage } from 'naive-ui'
 import { pointsAccount, pointsRecords, dailySign, signMonth, exchangeCourse, myExchanges, pointsActivities, claimActivity, myCoupons } from '../../api/points'
 import { courseSquare } from '../../api/course'
 
 const message = useMessage()
-const dialog = useDialog()
 
 const tab = ref('account')
 const loading = ref(false)
@@ -85,22 +84,52 @@ async function loadMall() {
 
 const exchangedCourseIds = computed(() => new Set(exchanges.value.filter(e => e.status === 1).map(e => e.courseId)))
 
-function handleExchange(course) {
-  dialog.warning({
-    title: '确认兑换',
-    content: `确定使用 ${course.pointsPrice} 积分兑换《${course.title}》吗？`,
-    positiveText: '兑换',
-    negativeText: '取消',
-    onPositiveClick: async () => {
-      try {
-        await exchangeCourse(course.id)
-        message.success('兑换成功，已自动选课')
-        await Promise.all([loadAccount(), loadMall()])
-      } catch (e) {
-        message.error(e.message)
-      }
-    }
+// 兑换弹窗：选择优惠券抵扣
+const exchangeTarget = ref(null)
+const exchangeVisible = ref(false)
+const selectedCouponId = ref(null)
+
+// 可用优惠券（未使用、未过期，满减券满足门槛）
+const usableCoupons = computed(() => {
+  const price = exchangeTarget.value?.pointsPrice || 0
+  return coupons.value.filter(c => {
+    if (c.status !== 0) return false
+    if (c.expireTime && new Date(c.expireTime) < new Date()) return false
+    if (c.type === 1 && c.threshold > 0 && price < c.threshold) return false
+    return true
   })
+})
+
+// 折后应付积分
+const exchangePay = computed(() => {
+  const price = exchangeTarget.value?.pointsPrice || 0
+  const c = usableCoupons.value.find(x => x.id === selectedCouponId.value)
+  if (!c) return price
+  if (c.type === 2) return Math.max(0, Math.round(price * c.value / 100))
+  return Math.max(0, price - c.value)
+})
+
+const exchangeDiscount = computed(() => {
+  const price = exchangeTarget.value?.pointsPrice || 0
+  return Math.max(0, price - exchangePay.value)
+})
+
+function openExchange(course) {
+  exchangeTarget.value = course
+  selectedCouponId.value = null
+  exchangeVisible.value = true
+}
+
+async function confirmExchange() {
+  const course = exchangeTarget.value
+  try {
+    await exchangeCourse(course.id, selectedCouponId.value || undefined)
+    message.success('兑换成功，已自动选课')
+    exchangeVisible.value = false
+    await Promise.all([loadAccount(), loadMall(), loadCoupons()])
+  } catch (e) {
+    message.error(e.message)
+  }
 }
 
 async function loadActivities() {
@@ -125,12 +154,12 @@ function isCouponActivity(a) {
 
 function couponText(c) {
   if (c.type === 2) return `${(c.value / 10).toFixed(1)} 折`
-  return c.threshold > 0 ? `满${c.threshold}减${c.value}` : `立减${c.value} 元`
+  return c.threshold > 0 ? `满${c.threshold}减${c.value}积分` : `立减${c.value}积分`
 }
 
 function couponActivityText(a) {
   if (a.couponType === 2) return `${(a.couponValue / 10).toFixed(1)} 折券`
-  return a.couponThreshold > 0 ? `满${a.couponThreshold}减${a.couponValue}` : `立减${a.couponValue} 元`
+  return a.couponThreshold > 0 ? `满${a.couponThreshold}减${a.couponValue}` : `立减${a.couponValue}积分`
 }
 
 function couponStatusText(s) {
@@ -262,7 +291,7 @@ onMounted(() => {
                   :type="exchangedCourseIds.has(course.id) ? 'default' : 'primary'"
                   :disabled="exchangedCourseIds.has(course.id)"
                   style="margin-top: 12px"
-                  @click="handleExchange(course)"
+                  @click="openExchange(course)"
                 >
                   {{ exchangedCourseIds.has(course.id) ? '已兑换' : '立即兑换' }}
                 </n-button>
@@ -274,11 +303,12 @@ onMounted(() => {
           <h3 style="margin: 24px 0 12px">我的兑换记录</h3>
           <n-table :bordered="false" :single-line="false" size="small">
             <thead>
-              <tr><th>课程 ID</th><th>消耗积分</th><th>状态</th><th>时间</th></tr>
+              <tr><th>课程 ID</th><th>优惠</th><th>实付积分</th><th>状态</th><th>时间</th></tr>
             </thead>
             <tbody>
               <tr v-for="e in exchanges" :key="e.id">
                 <td>#{{ e.courseId }}</td>
+                <td>{{ e.discount ? `-${e.discount}` : '-' }}</td>
                 <td>{{ e.pointsCost }}</td>
                 <td><n-tag :type="e.status === 1 ? 'success' : 'error'" size="small">{{ e.status === 1 ? '成功' : '失败' }}</n-tag></td>
                 <td class="muted">{{ e.createTime }}</td>
@@ -295,7 +325,7 @@ onMounted(() => {
           <n-grid-item v-for="c in coupons" :key="c.id">
             <div class="coupon-card" :class="{ used: c.status === 1, expired: c.status === 2 }">
               <div class="coupon-left">
-                <div class="coupon-value">{{ c.type === 2 ? (c.value / 10).toFixed(1) + '折' : '¥' + c.value }}</div>
+                <div class="coupon-value">{{ c.type === 2 ? (c.value / 10).toFixed(1) + '折' : c.value + '积分' }}</div>
                 <div class="coupon-name">{{ c.name }}</div>
               </div>
               <div class="coupon-right">

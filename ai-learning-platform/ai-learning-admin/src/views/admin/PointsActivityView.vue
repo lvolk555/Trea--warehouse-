@@ -13,6 +13,7 @@ const form = reactive({
   description: '',
   icon: '',
   activityType: 1,
+  taskKey: 'profile',
   reward: 10,
   couponName: '',
   couponType: 1,
@@ -21,6 +22,14 @@ const form = reactive({
   couponExpireDays: 30,
   sortOrder: 0
 })
+
+const taskOptions = [
+  { value: 'profile', label: '完善个人资料' },
+  { value: 'ai_ask', label: '完成 AI 答疑' },
+  { value: 'chapter_finish', label: '完成章节学习' },
+  { value: 'exam_pass', label: '通过一次考试' }
+]
+const taskLabel = (key) => taskOptions.find(t => t.value === key)?.label || key
 
 const columns = [
   { title: '活动名称', dataIndex: 'title' },
@@ -33,7 +42,7 @@ const columns = [
 ]
 
 function couponText(a) {
-  return a.couponType === 2 ? `${(a.couponValue / 10).toFixed(1)} 折券` : (a.couponThreshold > 0 ? `满${a.couponThreshold}减${a.couponValue}` : `立减${a.couponValue} 元`)
+  return a.couponType === 2 ? `${(a.couponValue / 10).toFixed(1)} 折券` : (a.couponThreshold > 0 ? `满${a.couponThreshold}减${a.couponValue}积分` : `立减${a.couponValue}积分`)
 }
 
 async function load() {
@@ -49,7 +58,7 @@ async function load() {
 
 function resetForm() {
   Object.assign(form, {
-    title: '', description: '', icon: '', activityType: 1, reward: 10,
+    title: '', description: '', icon: '', activityType: 1, taskKey: 'profile', reward: 10,
     couponName: '', couponType: 1, couponValue: 10, couponThreshold: 0,
     couponExpireDays: 30, sortOrder: 0
   })
@@ -68,6 +77,7 @@ function openEdit(record) {
     description: record.description,
     icon: record.icon,
     activityType: record.activityType,
+    taskKey: record.taskKey || 'profile',
     reward: record.reward,
     couponName: record.couponName,
     couponType: record.couponType || 1,
@@ -144,6 +154,7 @@ onMounted(load)
         <template v-else-if="column.key === 'benefit'">
           <span v-if="record.activityType === 2">{{ record.couponName }}（{{ couponText(record) }}）</span>
           <span v-else class="reward">+{{ record.reward }} 积分</span>
+          <span v-if="record.activityType === 1 && record.taskKey" class="task-key">（{{ taskLabel(record.taskKey) }}）</span>
         </template>
         <template v-else-if="column.key === 'enabled'">
           <a-tag :color="record.enabled === 1 ? 'green' : 'default'">{{ record.enabled === 1 ? '已发布' : '未发布' }}</a-tag>
@@ -173,6 +184,12 @@ onMounted(load)
         </a-form-item>
 
         <template v-if="form.activityType === 1">
+          <a-form-item label="任务类型" required>
+            <a-select v-model:value="form.taskKey" style="width: 240px">
+              <a-select-option v-for="t in taskOptions" :key="t.value" :value="t.value">{{ t.label }}</a-select-option>
+            </a-select>
+            <div class="hint">学生需真实完成该任务后才能领取积分</div>
+          </a-form-item>
           <a-form-item label="奖励积分">
             <a-input-number v-model:value="form.reward" :min="0" :max="10000" style="width: 140px" />
           </a-form-item>
@@ -196,12 +213,12 @@ onMounted(load)
           </a-row>
           <a-row :gutter="12">
             <a-col :span="12">
-              <a-form-item :label="form.couponType === 2 ? '折扣（85 = 8.5 折）' : '减免金额（元）'">
+              <a-form-item :label="form.couponType === 2 ? '折扣（85 = 8.5 折）' : '减免积分'">
                 <a-input-number v-model:value="form.couponValue" :min="1" :max="10000" style="width: 100%" />
               </a-form-item>
             </a-col>
             <a-col :span="12">
-              <a-form-item v-if="form.couponType === 1" label="使用门槛（0 = 无门槛）">
+              <a-form-item v-if="form.couponType === 1" label="使用门槛（积分，0 = 无门槛）">
                 <a-input-number v-model:value="form.couponThreshold" :min="0" :max="100000" style="width: 100%" />
               </a-form-item>
               <a-form-item v-else label="有效期（天）">
@@ -232,5 +249,14 @@ onMounted(load)
 .reward {
   color: #fa8c16;
   font-weight: 600;
+}
+.task-key {
+  color: #9ca3af;
+  font-size: 12px;
+}
+.hint {
+  color: #9ca3af;
+  font-size: 12px;
+  margin-top: 4px;
 }
 </style>

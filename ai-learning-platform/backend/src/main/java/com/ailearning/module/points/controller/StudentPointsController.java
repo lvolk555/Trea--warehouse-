@@ -67,10 +67,11 @@ public class StudentPointsController {
         return Result.ok(signService.monthRecords());
     }
 
-    /** 兑换积分课程 */
+    /** 兑换积分课程（可选使用优惠券抵扣） */
     @PostMapping("/exchange/{courseId}")
-    public Result<CourseExchangeRecord> exchange(@PathVariable Long courseId) {
-        return Result.ok(exchangeService.exchange(courseId));
+    public Result<CourseExchangeRecord> exchange(@PathVariable Long courseId,
+                                                 @RequestParam(required = false) Long couponId) {
+        return Result.ok(exchangeService.exchange(courseId, couponId));
     }
 
     /** 我的兑换记录 */

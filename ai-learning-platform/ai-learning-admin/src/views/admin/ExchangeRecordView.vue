@@ -12,6 +12,7 @@ const userIdFilter = ref(null)
 const columns = [
   { title: '学生 ID', dataIndex: 'userId', width: 100 },
   { title: '课程 ID', dataIndex: 'courseId', width: 100 },
+  { title: '抵扣积分', key: 'discount', width: 100 },
   { title: '消耗积分', dataIndex: 'pointsCost', width: 100 },
   { title: '状态', key: 'status', width: 90 },
   { title: '兑换时间', dataIndex: 'createTime' }
@@ -47,6 +48,9 @@ onMounted(load)
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'status'">
           <a-tag :color="record.status === 1 ? 'green' : 'red'">{{ record.status === 1 ? '成功' : '失败' }}</a-tag>
+        </template>
+        <template v-else-if="column.key === 'discount'">
+          <span>{{ record.discount ? `-${record.discount}` : '-' }}</span>
         </template>
       </template>
     </a-table>
