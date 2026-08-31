@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useMessage, useDialog } from 'naive-ui'
-import { pointsAccount, pointsRecords, dailySign, signMonth, exchangeCourse, myExchanges, pointsActivities, claimActivity } from '../../api/points'
+import { pointsAccount, pointsRecords, dailySign, signMonth, exchangeCourse, myExchanges, pointsActivities, claimActivity, myCoupons } from '../../api/points'
 import { courseSquare } from '../../api/course'
 
 const message = useMessage()
@@ -24,6 +24,8 @@ const mallCourses = ref([])
 const exchanges = ref([])
 // 积分活动
 const activities = ref([])
+// 我的优惠券
+const coupons = ref([])
 
 const typeText = { 1: '完课奖励', 2: '签到奖励', 3: '考试奖励', 4: 'AI 提问', 5: '兑换扣减', 6: '注册赠送', 7: '积分活动' }
 
@@ -109,11 +111,42 @@ async function loadActivities() {
   }
 }
 
+async function loadCoupons() {
+  try {
+    coupons.value = await myCoupons()
+  } catch (e) {
+    /* 忽略 */
+  }
+}
+
+function isCouponActivity(a) {
+  return a.activityType === 2
+}
+
+function couponText(c) {
+  if (c.type === 2) return `${(c.value / 10).toFixed(1)} 折`
+  return c.threshold > 0 ? `满${c.threshold}减${c.value}` : `立减${c.value} 元`
+}
+
+function couponActivityText(a) {
+  if (a.couponType === 2) return `${(a.couponValue / 10).toFixed(1)} 折券`
+  return a.couponThreshold > 0 ? `满${a.couponThreshold}减${a.couponValue}` : `立减${a.couponValue} 元`
+}
+
+function couponStatusText(s) {
+  return s === 1 ? '已使用' : s === 2 ? '已过期' : '未使用'
+}
+
 async function handleClaim(activity) {
   try {
     const r = await claimActivity(activity.id)
-    message.success(`领取成功，+${r.reward} 积分`)
-    await Promise.all([loadAccount(), loadActivities()])
+    if (r.activityType === 2) {
+      message.success(`领取成功，已发放「${r.couponName}」`)
+      await Promise.all([loadActivities(), loadCoupons()])
+    } else {
+      message.success(`领取成功，+${r.reward} 积分`)
+      await Promise.all([loadAccount(), loadActivities()])
+    }
   } catch (e) {
     message.warning(e.message)
   }
@@ -125,6 +158,7 @@ onMounted(() => {
   loadRecords()
   loadMall()
   loadActivities()
+  loadCoupons()
 })
 </script>
 
@@ -162,7 +196,7 @@ onMounted(() => {
     <!-- 积分活动 -->
     <n-card title="积分活动" size="small" style="margin-top: 16px">
       <template #header-extra>
-        <n-text depth="3" style="font-size: 12px">每日任务，完成后领取积分</n-text>
+        <n-text depth="3" style="font-size: 12px">完成任务/领取限时优惠券</n-text>
       </template>
       <n-grid cols="1 s:2 m:4" responsive="screen" :x-gap="12" :y-gap="12">
         <n-grid-item v-for="a in activities" :key="a.id">
@@ -173,9 +207,11 @@ onMounted(() => {
               <div class="activity-desc">{{ a.description }}</div>
             </div>
             <div class="activity-right">
-              <n-tag type="warning" size="small">+{{ a.reward }}</n-tag>
+              <n-tag :type="isCouponActivity(a) ? 'error' : 'warning'" size="small">
+                {{ isCouponActivity(a) ? couponActivityText(a) : `+${a.reward} 积分` }}
+              </n-tag>
               <n-button size="tiny" :type="a.claimed ? 'default' : 'primary'" :disabled="a.claimed" @click="handleClaim(a)">
-                {{ a.claimed ? '已完成' : '领取' }}
+                {{ a.claimed ? '已领取' : '领取' }}
               </n-button>
             </div>
           </div>
@@ -251,6 +287,26 @@ onMounted(() => {
           </n-table>
           <n-empty v-if="exchanges.length === 0" description="暂无兑换记录" style="margin: 24px 0" />
         </n-spin>
+      </n-tab-pane>
+
+      <!-- 我的优惠券 -->
+      <n-tab-pane name="coupons" tab="我的优惠券">
+        <n-grid v-if="coupons.length" cols="1 s:2 m:3" responsive="screen" :x-gap="16" :y-gap="16">
+          <n-grid-item v-for="c in coupons" :key="c.id">
+            <div class="coupon-card" :class="{ used: c.status === 1, expired: c.status === 2 }">
+              <div class="coupon-left">
+                <div class="coupon-value">{{ c.type === 2 ? (c.value / 10).toFixed(1) + '折' : '¥' + c.value }}</div>
+                <div class="coupon-name">{{ c.name }}</div>
+              </div>
+              <div class="coupon-right">
+                <div class="coupon-desc">{{ couponText(c) }}</div>
+                <div class="coupon-expire">有效期至 {{ c.expireTime }}</div>
+                <n-tag :type="c.status === 0 ? 'info' : 'default'" size="small">{{ couponStatusText(c.status) }}</n-tag>
+              </div>
+            </div>
+          </n-grid-item>
+        </n-grid>
+        <n-empty v-else description="暂无优惠券，去积分活动领取吧" style="margin: 24px 0" />
       </n-tab-pane>
     </n-tabs>
   </div>
@@ -340,6 +396,54 @@ onMounted(() => {
 .muted {
   color: #9ca3af;
   font-size: 13px;
+}
+.coupon-card {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid #f0e6d2;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+}
+.coupon-left {
+  flex-shrink: 0;
+  min-width: 92px;
+  padding: 14px;
+  background: linear-gradient(135deg, #ff7a45, #fa541c);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+.coupon-value {
+  font-size: 22px;
+  font-weight: 700;
+}
+.coupon-name {
+  font-size: 12px;
+  margin-top: 4px;
+  opacity: 0.9;
+}
+.coupon-right {
+  flex: 1;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+}
+.coupon-desc {
+  font-weight: 600;
+  font-size: 14px;
+}
+.coupon-expire {
+  color: #9ca3af;
+  font-size: 12px;
+}
+.coupon-card.used, .coupon-card.expired {
+  filter: grayscale(100%);
+  opacity: 0.6;
 }
 @media (max-width: 768px) {
   .account-row {

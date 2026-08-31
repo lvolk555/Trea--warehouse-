@@ -1,8 +1,8 @@
 -- ============================================================
 -- AI 辅助在线学习平台 数据库初始化脚本
 -- 数据库：MySQL 8.x  字符集：utf8mb4
--- 共 23 张表：用户域 1 + 课程域 4 + 学习域 2 + 考试域 5
---            + AI 域 2 + 积分域 6 + 运营域 2 + 签到记录 1
+-- 共 24 张表：用户域 1 + 课程域 4 + 学习域 2 + 考试域 5
+--            + AI 域 2 + 积分域 8 + 运营域 2
 -- 测试账号密码均为 123456（BCrypt 加密）
 -- ============================================================
 
@@ -287,16 +287,22 @@ CREATE TABLE `sign_record` (
   UNIQUE KEY `uk_user_date` (`user_id`, `sign_date`)
 ) ENGINE = InnoDB COMMENT = '签到记录表';
 
--- 18.5 积分活动表（积分任务，学生每日可领取奖励）
+-- 18.5 积分活动表（积分任务/优惠券活动，学生可领取，管理端可发布/下线）
 DROP TABLE IF EXISTS `points_activity`;
 CREATE TABLE `points_activity` (
-  `id`          BIGINT       NOT NULL AUTO_INCREMENT COMMENT '主键',
-  `title`       VARCHAR(50)  NOT NULL COMMENT '活动名称',
-  `description` VARCHAR(200) DEFAULT NULL COMMENT '完成说明',
-  `icon`        VARCHAR(50)  DEFAULT NULL COMMENT '图标标识',
-  `reward`      INT          NOT NULL DEFAULT 0 COMMENT '奖励积分',
-  `enabled`     TINYINT      NOT NULL DEFAULT 1 COMMENT '0停用 1启用',
-  `sort_order`  INT          NOT NULL DEFAULT 0 COMMENT '排序',
+  `id`                 BIGINT       NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `title`              VARCHAR(50)  NOT NULL COMMENT '活动名称',
+  `description`        VARCHAR(200) DEFAULT NULL COMMENT '完成说明',
+  `icon`               VARCHAR(50)  DEFAULT NULL COMMENT '图标标识',
+  `activity_type`      TINYINT      NOT NULL DEFAULT 1 COMMENT '活动类型：1积分任务 2优惠券',
+  `reward`             INT          NOT NULL DEFAULT 0 COMMENT '奖励积分（积分任务）',
+  `coupon_name`        VARCHAR(50)  DEFAULT NULL COMMENT '券名称（优惠券）',
+  `coupon_type`        TINYINT      DEFAULT 1 COMMENT '券类型：1满减券 2折扣券',
+  `coupon_value`       INT          DEFAULT NULL COMMENT '券值：满减为减免金额，折扣为折扣(85=8.5折)',
+  `coupon_threshold`   INT          DEFAULT 0 COMMENT '使用门槛（满多少可用，0无门槛）',
+  `coupon_expire_days` INT          DEFAULT 30 COMMENT '券有效期（天）',
+  `enabled`            TINYINT      NOT NULL DEFAULT 0 COMMENT '0未发布/停用 1已发布',
+  `sort_order`         INT          NOT NULL DEFAULT 0 COMMENT '排序',
   PRIMARY KEY (`id`)
 ) ENGINE = InnoDB COMMENT = '积分活动表';
 
@@ -312,6 +318,23 @@ CREATE TABLE `points_activity_record` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_user_activity_date` (`user_id`, `activity_id`, `claim_date`)
 ) ENGINE = InnoDB COMMENT = '积分活动领取记录表';
+
+-- 18.7 用户优惠券表（学生领取优惠券活动后生成的券快照）
+DROP TABLE IF EXISTS `user_coupon`;
+CREATE TABLE `user_coupon` (
+  `id`          BIGINT      NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `user_id`     BIGINT      NOT NULL COMMENT '学生',
+  `activity_id` BIGINT      DEFAULT NULL COMMENT '来源活动',
+  `name`        VARCHAR(50) NOT NULL COMMENT '券名称',
+  `type`        TINYINT     NOT NULL DEFAULT 1 COMMENT '券类型：1满减券 2折扣券',
+  `value`       INT         DEFAULT NULL COMMENT '券值',
+  `threshold`   INT         NOT NULL DEFAULT 0 COMMENT '使用门槛',
+  `status`      TINYINT     NOT NULL DEFAULT 0 COMMENT '0未使用 1已使用 2已过期',
+  `expire_time` DATETIME    DEFAULT NULL COMMENT '过期时间',
+  `create_time` DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '领取时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_user` (`user_id`)
+) ENGINE = InnoDB COMMENT = '用户优惠券表';
 
 -- ============================================================
 -- 七、运营域
@@ -405,12 +428,16 @@ INSERT INTO `points_rule` (`rule_key`, `rule_value`, `daily_limit`, `enabled`) V
 ('ai_ask', 2, 10, 1),
 ('register_gift', 100, 0, 1);
 
--- 积分活动（任务）
-INSERT INTO `points_activity` (`title`, `description`, `icon`, `reward`, `enabled`, `sort_order`) VALUES
-('完善个人资料', '完善昵称与头像，让同学认识你', 'profile', 10, 1, 1),
-('分享课程给好友', '把喜欢的课程分享给好友', 'share', 5, 1, 2),
-('撰写学习笔记', '为任意视频撰写一篇学习笔记', 'note', 5, 1, 3),
-('完成章节学习', '学完任意一个章节的全部视频', 'chapter', 10, 1, 4);
+-- 积分活动（任务 + 优惠券，贴近真实市场运营）
+INSERT INTO `points_activity`
+(`title`, `description`, `icon`, `activity_type`, `reward`, `coupon_name`, `coupon_type`, `coupon_value`, `coupon_threshold`, `coupon_expire_days`, `enabled`, `sort_order`) VALUES
+('完善个人资料', '完善昵称与头像，让同学认识你', 'profile', 1, 10, NULL, NULL, NULL, 0, NULL, 1, 1),
+('完成 AI 答疑', '向 AI 助手提问并完成一次答疑', 'robot', 1, 5, NULL, NULL, NULL, 0, NULL, 1, 2),
+('完成章节学习', '学完任意一个章节的全部视频', 'chapter', 1, 15, NULL, NULL, NULL, 0, NULL, 1, 3),
+('邀请好友注册', '邀请同学注册并完成首次登录', 'invite', 1, 30, NULL, NULL, NULL, 0, NULL, 1, 4),
+('新人无门槛券', '新用户专享，无门槛立减 10 元', 'coupon', 2, 0, '新人立减券', 1, 10, 0, 7, 1, 5),
+('课程满减券', '全场课程满 500 减 50', 'coupon', 2, 0, '课程满减券', 1, 50, 500, 30, 1, 6),
+('全场折扣券', '积分商城全场 8.5 折优惠', 'discount', 2, 0, '全场折扣券', 2, 85, 0, 15, 1, 7);
 
 -- 积分账户（学生注册赠送 100，student1 额外通过完课获得 30）
 INSERT INTO `points_account` (`user_id`, `balance`, `total_earned`, `total_spent`) VALUES

@@ -36,6 +36,7 @@ const adminMenus = [
   ] },
   { key: 'points-group', label: '积分管理', icon: GiftOutlined, children: [
     { key: 'points-rule', label: '积分规则' },
+    { key: 'points-activity', label: '积分活动' },
     { key: 'exchange-record', label: '兑换记录' }
   ] },
   { key: 'user-manage', label: '用户管理', icon: TeamOutlined },
@@ -52,7 +53,7 @@ function onOpenChange(keys) {
 }
 
 // 菜单点击跳转（未开发的模块给出提示）
-const developedRoutes = ['Dashboard', 'course', 'course-review', 'admin-course', 'question', 'exam', 'ai-generate', 'ai-grade', 'notice', 'comment', 'points-rule', 'exchange-record', 'user-manage']
+const developedRoutes = ['Dashboard', 'course', 'course-review', 'admin-course', 'question', 'exam', 'ai-generate', 'ai-grade', 'notice', 'comment', 'points-rule', 'points-activity', 'exchange-record', 'user-manage']
 function handleMenuClick({ key }) {
   if (developedRoutes.includes(key)) {
     router.push({ name: key })

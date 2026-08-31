@@ -2,12 +2,13 @@ package com.ailearning.module.points.controller;
 
 import com.ailearning.common.Result;
 import com.ailearning.common.UserContext;
+import com.ailearning.module.points.dto.ActivityClaimResult;
 import com.ailearning.module.points.entity.CourseExchangeRecord;
 import com.ailearning.module.points.entity.PointsAccount;
 import com.ailearning.module.points.entity.PointsActivity;
-import com.ailearning.module.points.entity.PointsActivityRecord;
 import com.ailearning.module.points.entity.PointsRecord;
 import com.ailearning.module.points.entity.SignRecord;
+import com.ailearning.module.points.entity.UserCoupon;
 import com.ailearning.module.points.mapper.PointsRecordMapper;
 import com.ailearning.module.points.service.ActivityService;
 import com.ailearning.module.points.service.ExchangeService;
@@ -84,9 +85,15 @@ public class StudentPointsController {
         return Result.ok(activityService.list());
     }
 
-    /** 领取积分活动奖励 */
+    /** 领取积分活动奖励（积分/优惠券） */
     @PostMapping("/activities/{id}/claim")
-    public Result<PointsActivityRecord> claimActivity(@PathVariable Long id) {
+    public Result<ActivityClaimResult> claimActivity(@PathVariable Long id) {
         return Result.ok(activityService.claim(id));
+    }
+
+    /** 我的优惠券 */
+    @GetMapping("/coupons")
+    public Result<List<UserCoupon>> coupons() {
+        return Result.ok(activityService.myCoupons());
     }
 }

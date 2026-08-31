@@ -12,6 +12,9 @@ export const myExchanges = () => request.get('/points/exchange/my')
 export const pointsActivities = () => request.get('/points/activities')
 export const claimActivity = (id) => request.post(`/points/activities/${id}/claim`)
 
+// 我的优惠券
+export const myCoupons = () => request.get('/points/coupons')
+
 // 运营接口：公告、评论
 export const notices = () => request.get('/ops/notices')
 export const courseComments = (courseId) => request.get(`/ops/comments/${courseId}`)

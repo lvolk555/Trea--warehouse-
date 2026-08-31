@@ -22,10 +22,28 @@ public class PointsActivity {
 
     private String icon;
 
-    /** 奖励积分 */
+    /** 活动类型：1积分任务 2优惠券 */
+    private Integer activityType;
+
+    /** 奖励积分（积分任务） */
     private Integer reward;
 
-    /** 0停用 1启用 */
+    /** 券名称（优惠券） */
+    private String couponName;
+
+    /** 券类型：1满减券 2折扣券 */
+    private Integer couponType;
+
+    /** 券值：满减为减免金额，折扣为折扣（85 = 8.5 折） */
+    private Integer couponValue;
+
+    /** 使用门槛（满多少可用，0 无门槛） */
+    private Integer couponThreshold;
+
+    /** 券有效期（天） */
+    private Integer couponExpireDays;
+
+    /** 0未发布/停用 1已发布 */
     private Integer enabled;
 
     private Integer sortOrder;

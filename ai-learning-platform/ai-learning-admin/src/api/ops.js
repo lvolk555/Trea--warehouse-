@@ -5,6 +5,13 @@ export const pointsRules = () => request.get('/admin/points/rules')
 export const updatePointsRule = (id, params) => request.post(`/admin/points/rules/${id}`, null, { params })
 export const exchangeRecords = (params) => request.get('/admin/points/exchanges', { params })
 
+// 管理端积分活动接口
+export const activityList = () => request.get('/admin/points/activities')
+export const createActivity = (data) => request.post('/admin/points/activities', data)
+export const updateActivity = (id, data) => request.post(`/admin/points/activities/${id}`, data)
+export const toggleActivity = (id, enabled) => request.post(`/admin/points/activities/${id}/status`, null, { params: { enabled } })
+export const deleteActivity = (id) => request.delete(`/admin/points/activities/${id}`)
+
 // 管理端公告接口
 export const noticePage = (params) => request.get('/admin/ops/notices', { params })
 export const saveNotice = (data) => request.post('/admin/ops/notices', data)
