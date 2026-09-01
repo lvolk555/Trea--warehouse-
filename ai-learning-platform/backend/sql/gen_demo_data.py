@@ -116,6 +116,8 @@ for c in courses:
             video_id += 1
         course_structure[cid].append(vids)
         chapter_id += 1
+# init.sql 已有课程 1 的章节/视频也纳入结构（否则选课学生无法生成该课的学习记录与完课积分）
+course_structure[1] = [[(1, 1080), (2, 1320)], [(3, 1500), (4, 1280), (5, 1560)]]
 
 add("INSERT INTO `chapter` (`id`, `course_id`, `title`, `sort_order`) VALUES")
 add(",\n".join(f"({r[0]}, {r[1]}, {sql_str(r[2])}, {r[3]})" for r in chapter_rows) + ";")
@@ -195,21 +197,25 @@ enroll_id = 3  # init.sql 已用 2 条（无显式 id，实际自增，这里用
 lr_id = 1
 
 # 每个学生的学习画像：选课列表 + 每门课的完成比例
+# 前 10 位设为"深度学习者"（选遍免费课 + 全部完课 + 考试必过 + 坚持签到），
+# 保证平台积分经济闭环：只有他们能攒够 500+ 积分去兑换付费课（与后端余额校验口径一致）
+DEEP_LEARNERS = set(student_ids[:10])
 profiles = {}
 for i, sid in enumerate(student_ids):
-    # 每人选 2-4 门免费课（课程 1 和 4 最热门）
-    n_courses = random.randint(2, 4)
-    chosen = random.sample([1, 1, 4, 4, 6, 7, 8, 10], n_courses)  # 加权：1 和 4 更热门
-    chosen = list(dict.fromkeys(chosen))  # 去重保序
-    profiles[sid] = {"free": chosen, "paid": [], "finish_ratio": {}}
-    for cid in chosen:
-        profiles[sid]["finish_ratio"][cid] = random.choice([0.0, 0.25, 0.5, 0.75, 1.0])
-# 部分学生兑换积分课程（积分足够者）
-for sid in student_ids[:8]:
-    if random.random() < 0.6:
-        cid = random.choice([5, 9])
-        profiles[sid]["paid"].append(cid)
-        profiles[sid]["finish_ratio"][cid] = random.choice([0.0, 0.5, 1.0])
+    if sid in DEEP_LEARNERS:
+        chosen = [1, 4, 6, 7, 8, 10]
+        profiles[sid] = {"free": chosen, "paid": [], "finish_ratio": {}}
+        for cid in chosen:
+            profiles[sid]["finish_ratio"][cid] = 1.0
+    else:
+        # 每人选 2-4 门免费课（课程 1 和 4 最热门）
+        n_courses = random.randint(2, 4)
+        chosen = random.sample([1, 1, 4, 4, 6, 7, 8, 10], n_courses)  # 加权：1 和 4 更热门
+        chosen = list(dict.fromkeys(chosen))  # 去重保序
+        profiles[sid] = {"free": chosen, "paid": [], "finish_ratio": {}}
+        for cid in chosen:
+            profiles[sid]["finish_ratio"][cid] = random.choice([0.0, 0.25, 0.5, 0.75, 1.0])
+# 积分课程的兑换已移至"积分核算"环节：先算清各学生收入，余额足够才兑换（见第 8 节）
 
 # 生成选课与学习记录
 for sid, prof in profiles.items():
@@ -301,9 +307,11 @@ q_answer_map = {r[0]: r[6] for r in fixed_rows}
 q_answer_map.update({1: "B", 2: "错", 3: "C", 4: "ABC"})
 for sid in student_ids:
     for exam_id in [1, 2]:
-        if random.random() < 0.5:  # 50% 参加每场考试
+        is_deep = sid in DEEP_LEARNERS
+        if is_deep or random.random() < 0.5:  # 深度学习者必考，其余 50% 参加每场考试
             qs = exam_questions[exam_id]
-            n_correct = random.randint(0, len(qs))
+            # 深度学习者稳过及格线（为攒积分兑换课程）；普通学生成绩随机
+            n_correct = random.randint(len(qs) - 1, len(qs)) if is_deep else random.randint(0, len(qs))
             score = round(n_correct * 100.0 / len(qs), 1)
             submit_day = random.randint(1, 8)
             exam_record_rows.append((er_id, exam_id, sid, score, dt(submit_day, random.randint(10, 22))))
@@ -335,7 +343,9 @@ msg_rows = []
 sess_id = 1
 msg_id = 1
 for sid in student_ids:
-    for _ in range(random.randint(0, 3)):
+    # 深度学习者至少 2 个会话（支撑 AI 提问奖励与 ai_ask 任务领取）
+    n_sess = random.randint(2, 3) if sid in DEEP_LEARNERS else random.randint(0, 3)
+    for _ in range(n_sess):
         day = random.randint(0, 13)
         q = random.choice(ai_questions)
         course = random.choice([1, 4, 5, 7, None])
@@ -382,8 +392,9 @@ for sid in student_ids:
     spent = 0
     points_rows.append((pt_id, sid, 6, 100, "注册赠送积分", dt(13, 10)))
     pt_id += 1
-    # 签到：近 14 天随机若干天（每天 +5）
-    sign_days = sorted(random.sample(range(0, 14), random.randint(3, 10)))
+    # 签到：深度学习者坚持 12-14 天，其余近 14 天随机若干天（每天 +5）
+    n_sign = random.randint(12, 14) if sid in DEEP_LEARNERS else random.randint(3, 10)
+    sign_days = sorted(random.sample(range(0, 14), n_sign))
     for d in sign_days:
         sign_rows.append((sg_id, sid, (NOW - timedelta(days=d)).strftime("%Y-%m-%d"), dt(d, 8)))
         sg_id += 1
@@ -422,9 +433,10 @@ add("")
 add("INSERT INTO `points_record` (`id`, `user_id`, `type`, `change_value`, `description`, `create_time`) VALUES")
 add(",\n".join(f"({r[0]}, {r[1]}, {r[2]}, {r[3]}, {sql_str(r[4])}, {sql_str(r[5])})" for r in points_rows) + ";")
 add("")
-add("INSERT INTO `course_exchange_record` (`id`, `user_id`, `course_id`, `points_cost`, `status`, `create_time`) VALUES")
-add(",\n".join(f"({r[0]}, {r[1]}, {r[2]}, {r[3]}, {r[4]}, {sql_str(r[5])})" for r in exchange_rows) + ";")
-add("")
+if exchange_rows:  # 兑换记录主要由 rich_data.sql 生成（含优惠券核销），此处仅兜底
+    add("INSERT INTO `course_exchange_record` (`id`, `user_id`, `course_id`, `points_cost`, `status`, `create_time`) VALUES")
+    add(",\n".join(f"({r[0]}, {r[1]}, {r[2]}, {r[3]}, {r[4]}, {sql_str(r[5])})" for r in exchange_rows) + ";")
+    add("")
 add("INSERT INTO `points_account` (`user_id`, `balance`, `total_earned`, `total_spent`) VALUES")
 add(",\n".join(f"({sid}, {v[0]}, {v[1]}, {v[2]})" for sid, v in accounts.items()) + ";")
 add("")
