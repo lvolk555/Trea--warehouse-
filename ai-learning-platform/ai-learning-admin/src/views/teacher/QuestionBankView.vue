@@ -215,6 +215,7 @@ onMounted(() => {
     <!-- 题目列表 -->
     <a-card :bordered="false">
       <a-table :columns="columns" :data-source="records" :loading="loading" row-key="id"
+        :scroll="{ x: 'max-content' }"
         :pagination="{
           current: query.pageNum, pageSize: query.pageSize, total, showSizeChanger: true,
           onChange: (p, s) => { query.pageNum = p; query.pageSize = s; loadQuestions() }
@@ -243,14 +244,14 @@ onMounted(() => {
       :confirm-loading="saving" ok-text="保存" cancel-text="取消" @ok="handleSave">
       <a-form layout="vertical">
         <a-row :gutter="16">
-          <a-col :span="12">
+          <a-col :xs="24" :sm="12">
             <a-form-item label="所属课程" required>
               <a-select v-model:value="form.courseId" placeholder="选择课程" @change="form.chapterId = null">
                 <a-select-option v-for="c in courses" :key="c.id" :value="c.id">{{ c.title }}</a-select-option>
               </a-select>
             </a-form-item>
           </a-col>
-          <a-col :span="12">
+          <a-col :xs="24" :sm="12">
             <a-form-item label="所属章节" required>
               <a-select v-model:value="form.chapterId" placeholder="先选择课程" :disabled="!form.courseId">
                 <a-select-option v-for="ch in formChapters" :key="ch.id" :value="ch.id">{{ ch.title }}</a-select-option>

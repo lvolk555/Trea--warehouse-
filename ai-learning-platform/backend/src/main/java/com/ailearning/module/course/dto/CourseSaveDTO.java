@@ -32,7 +32,7 @@ public class CourseSaveDTO {
     /** 兑换所需积分（priceType=2 时必填） */
     private Integer pointsPrice;
 
-    /** 章节与视频结构 */
+    /** 章节与小节结构（小节可为视频或文章） */
     @Valid
     private List<ChapterItem> chapters;
 
@@ -52,12 +52,18 @@ public class CourseSaveDTO {
     public static class VideoItem {
         private Long id;
 
-        @NotBlank(message = "视频标题不能为空")
+        @NotBlank(message = "小节标题不能为空")
         private String title;
+
+        /** 小节类型：1视频 2文章（默认视频） */
+        private Integer sectionType = 1;
 
         private String url;
 
         private Integer duration;
+
+        /** 文章内容（HTML，sectionType=2 时有效） */
+        private String articleContent;
 
         private Integer sortOrder;
     }

@@ -33,7 +33,7 @@ public class CourseAdminService {
     }
 
     /**
-     * 审核课程：通过 → 上架；驳回 → 下架
+     * 审核课程：通过 → 上架；驳回 → 已驳回（教师需重新修改后保存提交）
      */
     public Course review(ReviewDTO dto) {
         UserContext.checkRole(UserContext.ROLE_ADMIN);
@@ -44,14 +44,14 @@ public class CourseAdminService {
         if (!course.getStatus().equals(CourseService.STATUS_PENDING)) {
             throw new BizException("该课程不在待审核状态");
         }
-        course.setStatus(dto.getApproved() ? CourseService.STATUS_ONLINE : CourseService.STATUS_OFFLINE);
+        course.setStatus(dto.getApproved() ? CourseService.STATUS_ONLINE : CourseService.STATUS_REJECTED);
         courseMapper.updateById(course);
         return course;
     }
 
     /**
-     * 上架/下架课程（管理员对已审核课程的操作）
-     * 未审核通过的课程（待审核状态）不允许上下架，必须先完成审核
+     * 上架/下架课程：仅审核通过过的课程（已上架/已下架）可操作；
+     * 待审核与已驳回的课程不可上下架
      */
     public Course changeStatus(Long courseId, boolean online) {
         UserContext.checkRole(UserContext.ROLE_ADMIN);
@@ -59,8 +59,12 @@ public class CourseAdminService {
         if (course == null) {
             throw new BizException("课程不存在");
         }
-        if (course.getStatus().equals(CourseService.STATUS_PENDING)) {
+        int status = course.getStatus();
+        if (status == CourseService.STATUS_PENDING) {
             throw new BizException("该课程尚未审核通过，请先在课程审核中处理后再上下架");
+        }
+        if (status == CourseService.STATUS_REJECTED) {
+            throw new BizException("该课程已被驳回，需教师重新修改提交审核后才可上下架");
         }
         course.setStatus(online ? CourseService.STATUS_ONLINE : CourseService.STATUS_OFFLINE);
         courseMapper.updateById(course);

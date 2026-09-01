@@ -35,3 +35,16 @@ a {
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
+/* 移动端通用适配：约束弹窗与抽屉宽度，避免超出屏幕 */
+@media (max-width: 768px) {
+  .ant-modal {
+    max-width: calc(100vw - 24px) !important;
+  }
+  .ant-modal-content {
+    padding: 16px;
+  }
+  .ant-drawer-content-wrapper {
+    max-width: 100vw !important;
+  }
+}

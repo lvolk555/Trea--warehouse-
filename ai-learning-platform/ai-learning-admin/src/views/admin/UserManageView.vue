@@ -78,7 +78,7 @@ onMounted(load)
 <template>
   <a-card title="用户管理" :bordered="false">
     <div class="toolbar">
-      <a-space>
+      <a-space wrap>
         <a-input v-model:value="keyword" placeholder="用户名/昵称" allow-clear style="width: 160px" @press-enter="() => { page = 1; load() }" />
         <a-select v-model:value="roleFilter" placeholder="角色" allow-clear style="width: 110px" @change="() => { page = 1; load() }">
           <a-select-option :value="1">学生</a-select-option>
@@ -94,6 +94,7 @@ onMounted(load)
     </div>
 
     <a-table :columns="columns" :data-source="list" :loading="loading" row-key="id"
+             :scroll="{ x: 'max-content' }"
              :pagination="{ current: page, total, pageSize: 10, onChange: (p) => { page = p; load() } }">
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'role'">

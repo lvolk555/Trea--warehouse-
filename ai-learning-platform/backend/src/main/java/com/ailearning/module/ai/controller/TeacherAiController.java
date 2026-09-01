@@ -1,6 +1,7 @@
 package com.ailearning.module.ai.controller;
 
 import com.ailearning.common.Result;
+import com.ailearning.module.ai.dto.AiArticleDTO;
 import com.ailearning.module.ai.dto.AiGenerateDTO;
 import com.ailearning.module.ai.dto.AiGradeVO;
 import com.ailearning.module.ai.dto.AiQuestionSaveDTO;
@@ -27,6 +28,12 @@ public class TeacherAiController {
     @PostMapping("/generate")
     public Result<List<AiQuestionSaveDTO.Draft>> generate(@Valid @RequestBody AiGenerateDTO dto) {
         return Result.ok(aiGenerateService.generate(dto));
+    }
+
+    /** AI 生成教程文章：返回 Markdown 内容（教师/管理员在课程编辑弹窗中调用） */
+    @PostMapping("/generate-article")
+    public Result<String> generateArticle(@Valid @RequestBody AiArticleDTO dto) {
+        return Result.ok(aiGenerateService.generateArticle(dto));
     }
 
     /** 审核入库：勾选的 AI 题目草稿批量入库 */

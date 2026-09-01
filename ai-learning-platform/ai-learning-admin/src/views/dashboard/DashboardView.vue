@@ -155,17 +155,17 @@ onBeforeUnmount(() => {
       <a-empty v-if="stats.courseCount === 0" description="暂无课程，请先创建课程" style="margin-top: 80px" />
       <template v-else>
       <a-row :gutter="16">
-        <a-col :span="6"><a-card><a-statistic title="我的课程" :value="stats.courseCount" suffix="门" /></a-card></a-col>
-        <a-col :span="6"><a-card><a-statistic title="累计选课" :value="stats.totalStudents" suffix="人次" /></a-card></a-col>
-        <a-col :span="6"><a-card><a-statistic title="易错题（TOP）" :value="(stats.topWrongQuestions || []).length" suffix="道" /></a-card></a-col>
-        <a-col :span="6"><a-card><a-statistic title="平均完成度" :value="overallAvgProgress" suffix="%" :precision="1" /></a-card></a-col>
+        <a-col :xs="12" :sm="6"><a-card><a-statistic title="我的课程" :value="stats.courseCount" suffix="门" /></a-card></a-col>
+        <a-col :xs="12" :sm="6"><a-card><a-statistic title="累计选课" :value="stats.totalStudents" suffix="人次" /></a-card></a-col>
+        <a-col :xs="12" :sm="6"><a-card><a-statistic title="易错题（TOP）" :value="(stats.topWrongQuestions || []).length" suffix="道" /></a-card></a-col>
+        <a-col :xs="12" :sm="6"><a-card><a-statistic title="平均完成度" :value="overallAvgProgress" suffix="%" :precision="1" /></a-card></a-col>
       </a-row>
 
       <a-row :gutter="16" style="margin-top: 16px">
-        <a-col :span="12">
+        <a-col :xs="24" :sm="12">
           <a-card title="各课程选课人数"><div :ref="setChartRef('enroll')" style="height: 280px" /></a-card>
         </a-col>
-        <a-col :span="12">
+        <a-col :xs="24" :sm="12">
           <a-card title="各课程平均完成度"><div :ref="setChartRef('progress')" style="height: 280px" /></a-card>
         </a-col>
       </a-row>
@@ -189,21 +189,21 @@ onBeforeUnmount(() => {
     <!-- 管理员看板 -->
     <template v-else-if="isAdmin && stats">
       <a-row :gutter="16">
-        <a-col :span="5"><a-card><a-statistic title="用户总数" :value="stats.userTotal" /></a-card></a-col>
-        <a-col :span="5"><a-card><a-statistic title="学生数" :value="stats.studentTotal" /></a-card></a-col>
-        <a-col :span="5"><a-card><a-statistic title="课程总数" :value="stats.courseTotal" /></a-card></a-col>
-        <a-col :span="5"><a-card><a-statistic title="选课总数" :value="stats.enrollmentTotal" /></a-card></a-col>
-        <a-col :span="4"><a-card><a-statistic title="题目总数" :value="stats.questionTotal" /></a-card></a-col>
+        <a-col :xs="12" :sm="5"><a-card><a-statistic title="用户总数" :value="stats.userTotal" /></a-card></a-col>
+        <a-col :xs="12" :sm="5"><a-card><a-statistic title="学生数" :value="stats.studentTotal" /></a-card></a-col>
+        <a-col :xs="12" :sm="5"><a-card><a-statistic title="课程总数" :value="stats.courseTotal" /></a-card></a-col>
+        <a-col :xs="12" :sm="5"><a-card><a-statistic title="选课总数" :value="stats.enrollmentTotal" /></a-card></a-col>
+        <a-col :xs="24" :sm="4"><a-card><a-statistic title="题目总数" :value="stats.questionTotal" /></a-card></a-col>
       </a-row>
 
       <a-row :gutter="16" style="margin-top: 16px">
-        <a-col :span="12"><a-card title="近 14 天用户增长"><div :ref="setChartRef('userGrowth')" style="height: 260px" /></a-card></a-col>
-        <a-col :span="12"><a-card title="近 14 天 AI 调用趋势"><div :ref="setChartRef('aiCall')" style="height: 260px" /></a-card></a-col>
+        <a-col :xs="24" :sm="12"><a-card title="近 14 天用户增长"><div :ref="setChartRef('userGrowth')" style="height: 260px" /></a-card></a-col>
+        <a-col :xs="24" :sm="12"><a-card title="近 14 天 AI 调用趋势"><div :ref="setChartRef('aiCall')" style="height: 260px" /></a-card></a-col>
       </a-row>
 
       <a-row :gutter="16" style="margin-top: 16px">
-        <a-col :span="12"><a-card title="课程热度 TOP8"><div :ref="setChartRef('topCourses')" style="height: 280px" /></a-card></a-col>
-        <a-col :span="12"><a-card title="积分发放 / 消耗统计"><div :ref="setChartRef('points')" style="height: 280px" /></a-card></a-col>
+        <a-col :xs="24" :sm="12"><a-card title="课程热度 TOP8"><div :ref="setChartRef('topCourses')" style="height: 280px" /></a-card></a-col>
+        <a-col :xs="24" :sm="12"><a-card title="积分发放 / 消耗统计"><div :ref="setChartRef('points')" style="height: 280px" /></a-card></a-col>
       </a-row>
     </template>
   </a-spin>

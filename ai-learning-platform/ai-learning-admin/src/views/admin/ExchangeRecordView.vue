@@ -10,8 +10,8 @@ const total = ref(0)
 const userIdFilter = ref(null)
 
 const columns = [
-  { title: '学生 ID', dataIndex: 'userId', width: 100 },
-  { title: '课程 ID', dataIndex: 'courseId', width: 100 },
+  { title: '学生名称', dataIndex: 'studentName', width: 140 },
+  { title: '课程名称', dataIndex: 'courseName', width: 220 },
   { title: '抵扣积分', key: 'discount', width: 100 },
   { title: '消耗积分', dataIndex: 'pointsCost', width: 100 },
   { title: '状态', key: 'status', width: 90 },
@@ -37,13 +37,14 @@ onMounted(load)
 <template>
   <a-card title="兑换记录" :bordered="false">
     <div class="toolbar">
-      <a-space>
+      <a-space wrap>
         <a-input-number v-model:value="userIdFilter" placeholder="按学生 ID 筛选" :min="1" style="width: 160px" />
         <a-button type="primary" @click="() => { page = 1; load() }">查询</a-button>
         <a-button @click="() => { userIdFilter = null; page = 1; load() }">重置</a-button>
       </a-space>
     </div>
     <a-table :columns="columns" :data-source="list" :loading="loading" row-key="id"
+             :scroll="{ x: 'max-content' }"
              :pagination="{ current: page, total, pageSize: 10, onChange: (p) => { page = p; load() } }">
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'status'">

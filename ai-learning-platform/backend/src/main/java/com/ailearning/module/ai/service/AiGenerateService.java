@@ -2,6 +2,7 @@ package com.ailearning.module.ai.service;
 
 import com.ailearning.common.BizException;
 import com.ailearning.common.UserContext;
+import com.ailearning.module.ai.dto.AiArticleDTO;
 import com.ailearning.module.ai.dto.AiGenerateDTO;
 import com.ailearning.module.ai.dto.AiGradeVO;
 import com.ailearning.module.ai.dto.AiQuestionSaveDTO;
@@ -98,6 +99,32 @@ public class AiGenerateService {
         String raw = zhipuAiClient.chat(systemPrompt,
                 List.of(Map.of("role", "user", "content", userPrompt.toString()))).block();
         return parseDrafts(raw, dto.getType());
+    }
+
+    /**
+     * AI 生成教程文章：返回 Markdown 格式的教程内容（教师/管理员可用）
+     */
+    public String generateArticle(AiArticleDTO dto) {
+        UserContext.checkRole(UserContext.ROLE_TEACHER, UserContext.ROLE_ADMIN);
+        if (!zhipuAiClient.isConfigured()) {
+            throw new BizException("AI 服务暂未配置（缺少 ZHIPU_API_KEY）");
+        }
+        String systemPrompt = """
+                你是一名专业的教程作者，请根据用户提供的主题撰写一篇结构清晰、通俗易懂的教程文章。
+                使用 Markdown 格式输出，包含标题、分节标题、列表、代码块等，便于前端渲染。
+                直接输出文章正文，不要输出任何解释、前后缀或用代码块包裹整篇文章。
+                """;
+        StringBuilder userPrompt = new StringBuilder();
+        userPrompt.append("请撰写一篇教程，主题为：「").append(dto.getTitle()).append("」。");
+        if (dto.getKeywords() != null && !dto.getKeywords().isBlank()) {
+            userPrompt.append("需覆盖的关键词/知识点：").append(dto.getKeywords()).append("。");
+        }
+        if (dto.getRequirements() != null && !dto.getRequirements().isBlank()) {
+            userPrompt.append("补充要求：").append(dto.getRequirements()).append("。");
+        }
+        userPrompt.append("内容结构完整，面向初学者。");
+        return zhipuAiClient.chat(systemPrompt,
+                List.of(Map.of("role", "user", "content", userPrompt.toString()))).block();
     }
 
     /**

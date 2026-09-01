@@ -171,7 +171,7 @@ onMounted(() => {
         <a-button type="primary" @click="openCreate"><PlusOutlined /> 新建试卷</a-button>
       </template>
 
-      <a-table :columns="columns" :data-source="exams" :loading="loading" row-key="id" :pagination="false">
+      <a-table :columns="columns" :data-source="exams" :loading="loading" row-key="id" :pagination="false" :scroll="{ x: 'max-content' }">
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'count'">
             {{ record.questionIds?.length || 0 }} 题
@@ -199,14 +199,14 @@ onMounted(() => {
       :body-style="{ paddingBottom: '80px' }">
       <a-form layout="vertical">
         <a-row :gutter="16">
-          <a-col :span="12">
+          <a-col :xs="24" :sm="12">
             <a-form-item label="所属课程" required>
               <a-select v-model:value="form.courseId" placeholder="选择课程" @change="onFormCourseChange">
                 <a-select-option v-for="c in courses" :key="c.id" :value="c.id">{{ c.title }}</a-select-option>
               </a-select>
             </a-form-item>
           </a-col>
-          <a-col :span="12">
+          <a-col :xs="24" :sm="12">
             <a-form-item label="考试时长（分钟）" required>
               <a-input-number v-model:value="form.duration" :min="5" :max="240" style="width: 100%" />
             </a-form-item>

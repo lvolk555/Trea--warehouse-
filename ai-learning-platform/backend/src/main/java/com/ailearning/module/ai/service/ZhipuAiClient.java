@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.http.codec.ServerSentEvent;
@@ -16,6 +17,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.netty.http.client.HttpClient;
 import reactor.netty.transport.ProxyProvider;
+import reactor.util.retry.Retry;
 
 import java.net.URI;
 import java.time.Duration;
@@ -104,7 +106,13 @@ public class ZhipuAiClient {
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(body.toString())
                 .retrieve()
+                .onStatus(status -> status.value() == 429, resp -> Mono.error(new RateLimitException()))
+                .onStatus(HttpStatusCode::isError, resp -> Mono.error(new BizException("AI 服务暂时不可用，请稍后重试")))
                 .bodyToFlux(new org.springframework.core.ParameterizedTypeReference<ServerSentEvent<String>>() {})
+                // 限流自动重试（最多 2 次，指数退避），避免瞬时高峰导致失败
+                .retryWhen(Retry.backoff(2, Duration.ofSeconds(2))
+                        .filter(e -> e instanceof RateLimitException)
+                        .onRetryExhaustedThrow((spec, signal) -> new BizException("AI 服务限流，请稍后重试")))
                 // 过滤 [DONE] 与空块，解析 delta.content
                 .mapNotNull(sse -> extractDelta(sse.data()))
                 .filter(text -> !text.isEmpty())
@@ -122,9 +130,19 @@ public class ZhipuAiClient {
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(body.toString())
                 .retrieve()
+                .onStatus(status -> status.value() == 429, resp -> Mono.error(new RateLimitException()))
+                .onStatus(HttpStatusCode::isError, resp -> Mono.error(new BizException("AI 服务暂时不可用，请稍后重试")))
                 .bodyToMono(String.class)
+                // 限流自动重试（最多 2 次，指数退避），避免瞬时高峰导致失败
+                .retryWhen(Retry.backoff(2, Duration.ofSeconds(2))
+                        .filter(e -> e instanceof RateLimitException)
+                        .onRetryExhaustedThrow((spec, signal) -> new BizException("AI 服务限流，请稍后重试")))
                 .timeout(Duration.ofSeconds(90))
                 .map(this::extractContent);
+    }
+
+    /** 限流标记异常：仅用于内部识别 429 并触发重试 */
+    private static final class RateLimitException extends RuntimeException {
     }
 
     /** 组装 OpenAI 格式请求体 */

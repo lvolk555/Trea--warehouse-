@@ -12,6 +12,10 @@ export const reviewCourse = (data) => request.post('/admin/course/review', data)
 export const changeCourseStatus = (courseId, online) =>
   request.post(`/admin/course/status/${courseId}`, null, { params: { online } })
 export const adminCoursePage = (params) => request.get('/admin/course/page', { params })
+// 管理员课程增删改（与教师一致的课程管理能力）
+export const adminSaveCourse = (data) => request.post('/admin/course/save', data)
+export const adminSubmitCourse = (courseId) => request.post(`/admin/course/submit/${courseId}`)
+export const adminDeleteCourse = (courseId) => request.delete(`/admin/course/${courseId}`)
 
 // 课程详情（含章节视频树）
 export const courseDetail = (courseId) => request.get(`/course/${courseId}`)

@@ -116,33 +116,47 @@ onMounted(loadCourses)
       <a-alert type="info" show-icon style="margin-bottom: 16px"
         message="选择课程章节与题型，AI 自动生成题目草稿；教师审核修改后勾选入库，入库题目标记来源为 AI 生成。" />
 
-      <a-form layout="inline" style="margin-bottom: 16px">
-        <a-form-item label="课程" required>
-          <a-select v-model:value="form.courseId" placeholder="选择课程" style="width: 200px" @change="onCourseChange">
-            <a-select-option v-for="c in courses" :key="c.id" :value="c.id">{{ c.title }}</a-select-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item label="章节" required>
-          <a-select v-model:value="form.chapterId" placeholder="先选择课程" style="width: 180px" :disabled="!form.courseId">
-            <a-select-option v-for="ch in chapters" :key="ch.id" :value="ch.id">{{ ch.title }}</a-select-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item label="题型">
-          <a-radio-group v-model:value="form.type" button-style="solid">
-            <a-radio-button v-for="(v, k) in typeMap" :key="k" :value="Number(k)">{{ v.text }}</a-radio-button>
-          </a-radio-group>
-        </a-form-item>
-        <a-form-item label="数量">
-          <a-input-number v-model:value="form.count" :min="1" :max="10" />
-        </a-form-item>
-        <a-form-item label="知识点（选填）">
-          <a-input v-model:value="form.knowledgePoint" placeholder="如：循环结构" style="width: 160px" />
-        </a-form-item>
-        <a-form-item>
-          <a-button type="primary" :loading="generating" @click="handleGenerate">
-            <RobotOutlined /> {{ generating ? 'AI 生成中…' : '生成题目' }}
-          </a-button>
-        </a-form-item>
+      <a-form layout="vertical" style="margin-bottom: 16px">
+        <a-row :gutter="16">
+          <a-col :xs="24" :sm="12" :md="8">
+            <a-form-item label="课程" required>
+              <a-select v-model:value="form.courseId" placeholder="选择课程" @change="onCourseChange">
+                <a-select-option v-for="c in courses" :key="c.id" :value="c.id">{{ c.title }}</a-select-option>
+              </a-select>
+            </a-form-item>
+          </a-col>
+          <a-col :xs="24" :sm="12" :md="8">
+            <a-form-item label="章节" required>
+              <a-select v-model:value="form.chapterId" placeholder="先选择课程" :disabled="!form.courseId">
+                <a-select-option v-for="ch in chapters" :key="ch.id" :value="ch.id">{{ ch.title }}</a-select-option>
+              </a-select>
+            </a-form-item>
+          </a-col>
+          <a-col :xs="24" :sm="12" :md="8">
+            <a-form-item label="知识点（选填）">
+              <a-input v-model:value="form.knowledgePoint" placeholder="如：循环结构" />
+            </a-form-item>
+          </a-col>
+          <a-col :xs="24" :sm="12" :md="8">
+            <a-form-item label="题型">
+              <a-radio-group v-model:value="form.type" button-style="solid">
+                <a-radio-button v-for="(v, k) in typeMap" :key="k" :value="Number(k)">{{ v.text }}</a-radio-button>
+              </a-radio-group>
+            </a-form-item>
+          </a-col>
+          <a-col :xs="24" :sm="12" :md="8">
+            <a-form-item label="数量">
+              <a-input-number v-model:value="form.count" :min="1" :max="10" style="width: 100%" />
+            </a-form-item>
+          </a-col>
+          <a-col :xs="24" :sm="12" :md="8">
+            <a-form-item label=" ">
+              <a-button type="primary" :loading="generating" @click="handleGenerate">
+                <RobotOutlined /> {{ generating ? 'AI 生成中…' : '生成题目' }}
+              </a-button>
+            </a-form-item>
+          </a-col>
+        </a-row>
       </a-form>
 
       <!-- 草稿列表 -->
@@ -160,10 +174,10 @@ onMounted(loadCourses)
                   style="margin-bottom: 4px" :addon-before="String.fromCharCode(65 + oi)"
                   @change="e => (draft.options[oi] = e.target.value)" />
               </div>
-              <a-space>
-                <a-input :value="draft.answer" size="small" style="width: 200px" addon-before="答案"
+              <a-space wrap>
+                <a-input :value="draft.answer" size="small" style="width: 200px; max-width: 100%" addon-before="答案"
                   @change="e => updateDraft(i, 'answer', e.target.value)" />
-                <a-input :value="draft.analysis" size="small" style="width: 320px" addon-before="解析"
+                <a-input :value="draft.analysis" size="small" style="width: 320px; max-width: 100%" addon-before="解析"
                   @change="e => updateDraft(i, 'analysis', e.target.value)" />
               </a-space>
             </div>

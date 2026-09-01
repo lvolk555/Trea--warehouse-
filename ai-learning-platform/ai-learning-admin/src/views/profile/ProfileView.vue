@@ -81,7 +81,7 @@ async function handleChangePassword() {
   <div class="profile-page">
     <a-row :gutter="16">
       <!-- 账号信息 -->
-      <a-col :span="10">
+      <a-col :xs="24" :sm="10">
         <a-card :bordered="false" title="账号信息">
           <div class="info-head">
             <a-avatar :size="64" :src="userStore.user?.avatar">
@@ -102,7 +102,7 @@ async function handleChangePassword() {
       </a-col>
 
       <!-- 修改资料 -->
-      <a-col :span="14">
+      <a-col :xs="24" :sm="14">
         <a-card :bordered="false" title="修改资料">
           <a-form ref="profileFormRef" :model="profileForm" layout="vertical" style="max-width: 420px">
             <a-form-item label="昵称" name="nickname">

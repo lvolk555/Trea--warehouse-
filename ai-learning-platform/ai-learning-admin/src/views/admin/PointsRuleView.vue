@@ -66,7 +66,7 @@ onMounted(load)
 <template>
   <a-card title="积分规则配置" :bordered="false">
     <a-alert message="调整奖励值与每日上限后立即对新发生的积分行为生效；停用规则后对应行为不再发放积分。" type="info" show-icon style="margin-bottom: 16px" />
-    <a-table :columns="columns" :data-source="rules" :loading="loading" row-key="id" :pagination="false">
+    <a-table :columns="columns" :data-source="rules" :loading="loading" row-key="id" :pagination="false" :scroll="{ x: 'max-content' }">
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'name'">
           {{ ruleName[record.ruleKey] || record.ruleKey }}

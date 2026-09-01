@@ -121,7 +121,13 @@ public class QuestionService {
                 .in(Question::getType, TYPE_SINGLE, TYPE_MULTI, TYPE_JUDGE)
                 .last("ORDER BY RAND() LIMIT " + Math.max(limit, 1));
         List<Question> questions = questionMapper.selectList(wrapper);
-        return questions.stream().map(this::toVO).collect(Collectors.toList());
+        // 学生抽题时隐藏答案与解析，提交后由判分接口返回
+        return questions.stream().map(q -> {
+            QuestionVO vo = toVO(q);
+            vo.setAnswer(null);
+            vo.setAnalysis(null);
+            return vo;
+        }).collect(Collectors.toList());
     }
 
     /**

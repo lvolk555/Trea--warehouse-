@@ -6,10 +6,13 @@ import com.ailearning.module.course.entity.Course;
 import com.ailearning.module.course.mapper.CourseMapper;
 import com.ailearning.module.course.service.CourseService;
 import com.ailearning.module.course.service.EnrollmentService;
+import com.ailearning.module.points.dto.CourseExchangeRecordVO;
 import com.ailearning.module.points.entity.CourseExchangeRecord;
 import com.ailearning.module.points.entity.UserCoupon;
 import com.ailearning.module.points.mapper.CourseExchangeRecordMapper;
 import com.ailearning.module.points.mapper.UserCouponMapper;
+import com.ailearning.module.user.entity.User;
+import com.ailearning.module.user.mapper.UserMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -19,6 +22,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * 积分商城兑换服务：校验课程 → 防重复兑换 → 校验/核销优惠券 → 事务内扣积分 + 自动选课 + 记流水
@@ -37,6 +43,7 @@ public class ExchangeService {
     private final UserCouponMapper couponMapper;
     private final PointsService pointsService;
     private final EnrollmentService enrollmentService;
+    private final UserMapper userMapper;
 
     /**
      * 学生兑换积分课程（可选使用优惠券抵扣）
@@ -138,13 +145,35 @@ public class ExchangeService {
     }
 
     /**
-     * 管理员：兑换记录分页（可按学生筛选）
+     * 管理员：兑换记录分页（可按学生筛选），补充学生名称与课程名称
      */
-    public IPage<CourseExchangeRecord> adminPage(int page, int size, Long userId) {
+    public IPage<CourseExchangeRecordVO> adminPage(int page, int size, Long userId) {
         UserContext.checkRole(UserContext.ROLE_ADMIN);
         LambdaQueryWrapper<CourseExchangeRecord> wrapper = new LambdaQueryWrapper<CourseExchangeRecord>()
                 .eq(userId != null, CourseExchangeRecord::getUserId, userId)
                 .orderByDesc(CourseExchangeRecord::getCreateTime);
-        return exchangeMapper.selectPage(new Page<>(page, size), wrapper);
+        IPage<CourseExchangeRecord> raw = exchangeMapper.selectPage(new Page<>(page, size), wrapper);
+        List<CourseExchangeRecord> records = raw.getRecords();
+
+        // 批量查询学生与课程，用于填充名称
+        List<Long> userIds = records.stream().map(CourseExchangeRecord::getUserId).distinct().toList();
+        List<Long> courseIds = records.stream().map(CourseExchangeRecord::getCourseId).distinct().toList();
+        Map<Long, User> userMap = userIds.isEmpty() ? Map.of()
+                : userMapper.selectBatchIds(userIds).stream()
+                        .collect(Collectors.toMap(User::getId, Function.identity()));
+        Map<Long, Course> courseMap = courseIds.isEmpty() ? Map.of()
+                : courseMapper.selectBatchIds(courseIds).stream()
+                        .collect(Collectors.toMap(Course::getId, Function.identity()));
+
+        return raw.convert(r -> {
+            CourseExchangeRecordVO vo = new CourseExchangeRecordVO();
+            org.springframework.beans.BeanUtils.copyProperties(r, vo);
+            User u = userMap.get(r.getUserId());
+            vo.setStudentName(u == null ? null
+                    : (u.getNickname() != null && !u.getNickname().isBlank() ? u.getNickname() : u.getUsername()));
+            Course c = courseMap.get(r.getCourseId());
+            vo.setCourseName(c == null ? null : c.getTitle());
+            return vo;
+        });
     }
 }

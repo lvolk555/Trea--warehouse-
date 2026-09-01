@@ -119,7 +119,7 @@ onMounted(() => {
               <n-tag v-if="course.priceType === 1" type="success">免费</n-tag>
               <n-tag v-else type="warning">{{ course.pointsPrice }} 积分兑换</n-tag>
               <span class="muted">授课：{{ course.teacherName }}</span>
-              <span class="muted">{{ course.videoCount }} 节视频</span>
+              <span class="muted">共 {{ course.videoCount }} 个小节</span>
             </n-space>
             <p class="desc">{{ course.description }}</p>
             <n-space>
@@ -134,16 +134,18 @@ onMounted(() => {
         </div>
       </n-card>
 
-      <!-- 章节目录 -->
+      <!-- 章节目录（视频小节 / 文章小节） -->
       <n-card title="课程目录" style="margin-top: 16px">
         <n-collapse>
           <n-collapse-item v-for="chapter in course.chapters" :key="chapter.id" :title="chapter.title">
             <div v-for="video in chapter.videos" :key="video.id" class="video-row" @click="goStudy(video)">
               <span class="video-title">
-                <span class="play-icon">▶</span>
+                <span v-if="video.sectionType === 2" class="article-icon">📄</span>
+                <span v-else class="play-icon">▶</span>
                 {{ video.title }}
               </span>
-              <span class="muted">{{ formatDuration(video.duration) }}</span>
+              <span v-if="video.sectionType !== 2" class="muted">{{ formatDuration(video.duration) }}</span>
+              <n-tag v-else size="small" :bordered="false" type="info">图文</n-tag>
               <n-tag v-if="video.finished" size="small" type="success">已完成</n-tag>
             </div>
           </n-collapse-item>
@@ -220,6 +222,10 @@ onMounted(() => {
   font-size: 12px;
   margin-right: 6px;
 }
+.article-icon {
+  font-size: 13px;
+  margin-right: 6px;
+}
 .comment-input {
   display: flex;
   gap: 12px;
@@ -253,6 +259,39 @@ onMounted(() => {
   font-size: 14px;
   line-height: 1.6;
 }
+.article-content {
+  line-height: 1.9;
+  color: #374151;
+  font-size: 15px;
+  word-break: break-word;
+}
+.article-content :deep(h1) { font-size: 24px; margin: 18px 0 10px; }
+.article-content :deep(h2) { font-size: 20px; margin: 16px 0 8px; }
+.article-content :deep(h3) { font-size: 17px; margin: 14px 0 6px; }
+.article-content :deep(pre) {
+  background: #f6f8fa;
+  padding: 12px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 12px 0;
+}
+.article-content :deep(code) {
+  background: #f6f8fa;
+  padding: 2px 5px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 13px;
+}
+.article-content :deep(pre code) { background: transparent; padding: 0; }
+.article-content :deep(blockquote) {
+  border-left: 3px solid #d0d7de;
+  margin: 12px 0;
+  padding: 4px 14px;
+  color: #57606a;
+}
+.article-content :deep(ul), .article-content :deep(ol) { padding-left: 24px; margin: 8px 0; }
+.article-content :deep(img) { max-width: 100%; border-radius: 6px; }
+.article-content :deep(a) { color: #6366f1; }
 @media (max-width: 768px) {
   .head {
     flex-direction: column;

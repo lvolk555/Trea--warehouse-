@@ -2,7 +2,7 @@ package com.ailearning.module.points.controller;
 
 import com.ailearning.common.Result;
 import com.ailearning.module.points.dto.ActivitySaveDTO;
-import com.ailearning.module.points.entity.CourseExchangeRecord;
+import com.ailearning.module.points.dto.CourseExchangeRecordVO;
 import com.ailearning.module.points.entity.PointsActivity;
 import com.ailearning.module.points.entity.PointsRule;
 import com.ailearning.module.points.service.ActivityService;
@@ -43,9 +43,9 @@ public class AdminPointsController {
 
     /** 兑换记录分页 */
     @GetMapping("/exchanges")
-    public Result<IPage<CourseExchangeRecord>> exchanges(@RequestParam(defaultValue = "1") int page,
-                                                         @RequestParam(defaultValue = "10") int size,
-                                                         @RequestParam(required = false) Long userId) {
+    public Result<IPage<CourseExchangeRecordVO>> exchanges(@RequestParam(defaultValue = "1") int page,
+                                                           @RequestParam(defaultValue = "10") int size,
+                                                           @RequestParam(required = false) Long userId) {
         return Result.ok(exchangeService.adminPage(page, size, userId));
     }
 

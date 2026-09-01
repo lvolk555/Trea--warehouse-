@@ -40,10 +40,10 @@ CREATE TABLE `course` (
   `title`        VARCHAR(100) NOT NULL COMMENT '课程名称',
   `cover`        VARCHAR(255) DEFAULT NULL COMMENT '封面 URL',
   `category`     VARCHAR(50)  DEFAULT NULL COMMENT '分类（编程/数学等）',
-  `description`  TEXT         COMMENT '课程简介（作为 AI 答疑上下文）',
+  `description`   TEXT         COMMENT '课程简介（作为 AI 答疑上下文）',
   `price_type`   TINYINT      NOT NULL DEFAULT 1 COMMENT '定价方式：1免费 2积分兑换',
   `points_price` INT          NOT NULL DEFAULT 0 COMMENT '兑换所需积分（price_type=2 时有效）',
-  `status`       TINYINT      NOT NULL DEFAULT 0 COMMENT '状态：0待审核 1已上架 2已下架',
+  `status`       TINYINT      NOT NULL DEFAULT 0 COMMENT '状态：0待审核 1已上架 2已下架 3已驳回',
   `create_time`  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   PRIMARY KEY (`id`),
   KEY `idx_teacher` (`teacher_id`),
@@ -61,18 +61,20 @@ CREATE TABLE `chapter` (
   KEY `idx_course` (`course_id`)
 ) ENGINE = InnoDB COMMENT = '章节表';
 
--- 4. 视频表
+-- 4. 小节表（视频小节 / 文章小节）
 DROP TABLE IF EXISTS `video`;
 CREATE TABLE `video` (
   `id`         BIGINT       NOT NULL AUTO_INCREMENT COMMENT '主键',
   `chapter_id` BIGINT       NOT NULL COMMENT '所属章节',
-  `title`      VARCHAR(100) NOT NULL COMMENT '视频标题',
-  `url`        VARCHAR(255) DEFAULT NULL COMMENT '视频地址',
-  `duration`   INT          NOT NULL DEFAULT 0 COMMENT '时长（秒）',
+  `title`      VARCHAR(100) NOT NULL COMMENT '小节标题',
+  `section_type` TINYINT    NOT NULL DEFAULT 1 COMMENT '小节类型：1视频 2文章',
+  `url`        VARCHAR(255) DEFAULT NULL COMMENT '视频地址（section_type=1 时有效）',
+  `duration`   INT          NOT NULL DEFAULT 0 COMMENT '时长（秒，section_type=1 时有效）',
+  `article_content` LONGTEXT COMMENT '文章内容（HTML，section_type=2 时有效）',
   `sort_order` INT          NOT NULL DEFAULT 0 COMMENT '排序',
   PRIMARY KEY (`id`),
   KEY `idx_chapter` (`chapter_id`)
-) ENGINE = InnoDB COMMENT = '视频表';
+) ENGINE = InnoDB COMMENT = '小节表';
 
 -- 5. 选课表
 DROP TABLE IF EXISTS `course_enrollment`;

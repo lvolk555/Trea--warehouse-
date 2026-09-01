@@ -120,6 +120,7 @@ onMounted(load)
     </div>
 
     <a-table :columns="columns" :data-source="list" :loading="loading" row-key="id"
+             :scroll="{ x: 'max-content' }"
              :pagination="{ current: page, total, pageSize: 10, onChange: (p) => { page = p; load() } }">
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'type'">
@@ -169,6 +170,8 @@ onMounted(load)
 <style scoped>
 .toolbar {
   display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
   justify-content: space-between;
   margin-bottom: 16px;
 }

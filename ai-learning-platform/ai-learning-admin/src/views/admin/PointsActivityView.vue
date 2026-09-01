@@ -146,7 +146,7 @@ onMounted(load)
     <div style="margin-bottom: 16px">
       <a-button type="primary" @click="openCreate">新建活动</a-button>
     </div>
-    <a-table :columns="columns" :data-source="list" :loading="loading" row-key="id" :pagination="false">
+    <a-table :columns="columns" :data-source="list" :loading="loading" row-key="id" :pagination="false" :scroll="{ x: 'max-content' }">
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'type'">
           <a-tag :color="record.activityType === 2 ? 'purple' : 'blue'">{{ record.activityType === 2 ? '优惠券' : '积分任务' }}</a-tag>
@@ -197,12 +197,12 @@ onMounted(load)
 
         <template v-else>
           <a-row :gutter="12">
-            <a-col :span="12">
+            <a-col :xs="24" :sm="12">
               <a-form-item label="券名称">
                 <a-input v-model:value="form.couponName" placeholder="例如：课程满减券" />
               </a-form-item>
             </a-col>
-            <a-col :span="12">
+            <a-col :xs="24" :sm="12">
               <a-form-item label="券类型">
                 <a-select v-model:value="form.couponType">
                   <a-select-option :value="1">满减券</a-select-option>
@@ -212,12 +212,12 @@ onMounted(load)
             </a-col>
           </a-row>
           <a-row :gutter="12">
-            <a-col :span="12">
+            <a-col :xs="24" :sm="12">
               <a-form-item :label="form.couponType === 2 ? '折扣（85 = 8.5 折）' : '减免积分'">
                 <a-input-number v-model:value="form.couponValue" :min="1" :max="10000" style="width: 100%" />
               </a-form-item>
             </a-col>
-            <a-col :span="12">
+            <a-col :xs="24" :sm="12">
               <a-form-item v-if="form.couponType === 1" label="使用门槛（积分，0 = 无门槛）">
                 <a-input-number v-model:value="form.couponThreshold" :min="0" :max="100000" style="width: 100%" />
               </a-form-item>
