@@ -152,12 +152,22 @@ public class AiChatService {
         // 反转为时间正序
         for (int i = messages.size() - 1; i >= 0; i--) {
             AiChatMessage m = messages.get(i);
+            // 降级提示不入上下文：避免模型把"AI 服务不可用"当作自己说过的话，影响多轮语义
+            if ("assistant".equals(m.getRole()) && isFallbackText(m.getContent())) {
+                continue;
+            }
             Map<String, String> item = new HashMap<>();
             item.put("role", m.getRole());
             item.put("content", m.getContent());
             history.add(item);
         }
         return history;
+    }
+
+    /** 降级提示文案前缀（这些消息仅用于前端展示，不进入模型上下文） */
+    private boolean isFallbackText(String content) {
+        return content == null || content.isBlank()
+                || content.startsWith("AI 服务暂时不可用") || content.startsWith("AI 服务暂未配置");
     }
 
     /** 系统提示词：注入课程上下文 */
