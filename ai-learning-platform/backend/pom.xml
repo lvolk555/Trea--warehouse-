@@ -22,7 +22,21 @@
         <lombok.version>1.18.40</lombok.version>
         <mybatis-plus.version>3.5.12</mybatis-plus.version>
         <sa-token.version>1.44.0</sa-token.version>
+        <spring-ai.version>1.1.8</spring-ai.version>
     </properties>
+
+    <!-- 统一管理 Spring AI 各模块版本 -->
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-bom</artifactId>
+                <version>${spring-ai.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <!-- Web -->
@@ -35,10 +49,15 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
-        <!-- WebFlux：支持 Flux 作为 SSE 流式响应体（AI 答疑） -->
+        <!-- WebFlux：支持 Flux 作为 SSE 流式响应体（AI 答疑），同时为 Spring AI 流式调用提供 WebClient -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webflux</artifactId>
+        </dependency>
+        <!-- Spring AI：OpenAI 通用协议接入，可对接智谱 GLM / DeepSeek / OpenAI 等任意 OpenAI 兼容端点 -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-model-openai</artifactId>
         </dependency>
         <!-- MyBatis-Plus（Boot3 专用 starter） -->
         <dependency>
