@@ -372,6 +372,18 @@ CREATE TABLE `course_comment` (
   KEY `idx_course` (`course_id`)
 ) ENGINE = InnoDB COMMENT = '课程评论表';
 
+-- 21. 系统设置表
+DROP TABLE IF EXISTS `system_config`;
+CREATE TABLE `system_config` (
+  `id`           BIGINT       NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `config_key`   VARCHAR(50)  NOT NULL COMMENT '配置键',
+  `config_value` VARCHAR(200) NOT NULL DEFAULT '' COMMENT '配置值',
+  `remark`       VARCHAR(100) COMMENT '配置说明',
+  `update_time`  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_config_key` (`config_key`)
+) ENGINE = InnoDB COMMENT = '系统设置表';
+
 -- ============================================================
 -- 测试数据（密码均为 123456）
 -- ============================================================
@@ -450,6 +462,12 @@ INSERT INTO `points_account` (`user_id`, `balance`, `total_earned`, `total_spent
 (3, 130, 130, 0),
 (4, 100, 100, 0),
 (5, 100, 100, 0);
+
+-- 系统设置（管理员可在管理端"系统设置"页调整）
+INSERT INTO `system_config` (`config_key`, `config_value`, `remark`) VALUES
+('site_name', 'AI 辅助在线学习平台', '站点名称'),
+('ai_enabled', '1', 'AI 功能总开关（1开启 0关闭，关闭后答疑/出题/批改均降级提示）'),
+('register_enabled', '1', '开放学生自主注册（1开启 0关闭）');
 
 INSERT INTO `points_record` (`user_id`, `type`, `change_value`, `description`) VALUES
 (3, 6, 100, '注册赠送积分'),

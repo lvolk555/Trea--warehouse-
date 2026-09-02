@@ -26,5 +26,20 @@ export const deleteComment = (id) => request.delete(`/admin/ops/comments/${id}`)
 
 // 管理端用户接口
 export const userPage = (params) => request.get('/admin/ops/users', { params })
+export const createUser = (data) => request.post('/admin/ops/users', data)
+export const updateUser = (userId, data) => request.put(`/admin/ops/users/${userId}`, data)
+export const deleteUser = (userId) => request.delete(`/admin/ops/users/${userId}`)
+export const resetUserPassword = (userId, newPassword) => request.post(`/admin/ops/users/${userId}/reset-password`, { newPassword })
 export const userStatus = (userId, enable) => request.post(`/admin/ops/users/${userId}/status`, null, { params: { enable } })
 export const userRole = (userId, role) => request.post(`/admin/ops/users/${userId}/role`, null, { params: { role } })
+
+// 管理端系统设置接口
+export const systemSettings = () => request.get('/admin/ops/settings')
+export const saveSystemSettings = (data) => request.post('/admin/ops/settings', data)
+
+// 课程学生管理接口（教师管自己课程，管理员管所有课程）
+export const courseStudents = (courseId, params) => request.get(`/course/${courseId}/students`, { params })
+export const courseStudentCandidates = (courseId, params) => request.get(`/course/${courseId}/students/candidates`, { params })
+export const addCourseStudent = (courseId, data) => request.post(`/course/${courseId}/students`, data)
+export const updateCourseStudent = (courseId, enrollmentId, data) => request.put(`/course/${courseId}/students/${enrollmentId}`, data)
+export const removeCourseStudent = (courseId, enrollmentId) => request.delete(`/course/${courseId}/students/${enrollmentId}`)

@@ -1,6 +1,7 @@
 package com.ailearning.module.ai.service;
 
 import com.ailearning.common.BizException;
+import com.ailearning.module.ops.service.SystemConfigService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
@@ -31,6 +32,8 @@ import java.util.Map;
  * - chatStream：流式对话（SSE），用于 AI 答疑
  * - chat：一次性返回完整输出，用于 AI 出题/批改（需要完整 JSON）
  * 两者均内置 429 限流自动重试（指数退避）。
+ *
+ * 管理员可在系统设置中关闭 ai_enabled 总开关，关闭后所有 AI 功能降级提示，不发起调用。
  */
 @Slf4j
 @Service
@@ -38,16 +41,34 @@ public class ZhipuAiClient {
 
     private final OpenAiChatModel chatModel;
     private final String apiKey;
+    private final SystemConfigService systemConfigService;
 
     public ZhipuAiClient(OpenAiChatModel chatModel,
+                         SystemConfigService systemConfigService,
                          @Value("${spring.ai.openai.api-key:}") String apiKey) {
         this.chatModel = chatModel;
+        this.systemConfigService = systemConfigService;
         this.apiKey = apiKey;
     }
 
     /** API Key 是否已配置（未配置时各功能走降级提示） */
     public boolean isConfigured() {
         return apiKey != null && !apiKey.isBlank();
+    }
+
+    /** AI 功能是否可用：开关开启且密钥已配置 */
+    public boolean isAvailable() {
+        return systemConfigService.isEnabled("ai_enabled") && isConfigured();
+    }
+
+    /** 统一入口校验：开关关闭或密钥缺失时直接降级提示 */
+    private void checkAvailable() {
+        if (!systemConfigService.isEnabled("ai_enabled")) {
+            throw new BizException("AI 功能已被管理员关闭");
+        }
+        if (!isConfigured()) {
+            throw new BizException("AI 服务未配置，请联系管理员");
+        }
     }
 
     /**
@@ -57,6 +78,7 @@ public class ZhipuAiClient {
      * @param messages     多轮历史 [{role, content}]，不含 system
      */
     public Flux<String> chatStream(String systemPrompt, List<Map<String, String>> messages) {
+        checkAvailable();
         Prompt prompt = buildPrompt(systemPrompt, messages);
         return chatModel.stream(prompt)
                 .mapNotNull(resp -> resp.getResult() == null || resp.getResult().getOutput() == null
@@ -73,6 +95,7 @@ public class ZhipuAiClient {
      * 非流式对话：一次性返回完整输出（AI 出题/文章生成使用，需要完整 JSON/Markdown）
      */
     public Mono<String> chat(String systemPrompt, List<Map<String, String>> messages) {
+        checkAvailable();
         Prompt prompt = buildPrompt(systemPrompt, messages);
         return Mono.fromCallable(() -> chatModel.call(prompt))
                 .map(resp -> {

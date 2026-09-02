@@ -4,8 +4,10 @@ import com.ailearning.common.Result;
 import com.ailearning.module.ops.dto.NoticeSaveDTO;
 import com.ailearning.module.ops.entity.CourseComment;
 import com.ailearning.module.ops.entity.Notice;
+import com.ailearning.module.ops.entity.SystemConfig;
 import com.ailearning.module.ops.service.CommentService;
 import com.ailearning.module.ops.service.NoticeService;
+import com.ailearning.module.ops.service.SystemConfigService;
 import com.ailearning.module.ops.service.UserManageService;
 import com.ailearning.module.user.entity.User;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -13,10 +15,11 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 /**
- * 管理端运营接口：公告管理、评论审核、用户管理（需管理员角色）
+ * 管理端运营接口：公告管理、评论审核、用户管理（增删改查/重置密码）、系统设置（需管理员角色）
  */
 @RestController
 @RequestMapping("/admin/ops")
@@ -26,6 +29,7 @@ public class AdminOpsController {
     private final NoticeService noticeService;
     private final CommentService commentService;
     private final UserManageService userManageService;
+    private final SystemConfigService systemConfigService;
 
     // ---------- 公告 ----------
 
@@ -97,6 +101,32 @@ public class AdminOpsController {
         return Result.ok(userManageService.page(page, size, role, status, keyword));
     }
 
+    /** 新增用户（可指定学生/教师/管理员角色） */
+    @PostMapping("/users")
+    public Result<User> createUser(@RequestBody UserManageService.UserSaveDTO dto) {
+        return Result.ok(userManageService.create(dto));
+    }
+
+    /** 编辑用户（昵称/头像/角色/状态） */
+    @PutMapping("/users/{userId}")
+    public Result<User> updateUser(@PathVariable Long userId, @RequestBody UserManageService.UserSaveDTO dto) {
+        return Result.ok(userManageService.update(userId, dto));
+    }
+
+    /** 删除用户（连同其选课/学习/考试等数据清理） */
+    @DeleteMapping("/users/{userId}")
+    public Result<Void> deleteUser(@PathVariable Long userId) {
+        userManageService.delete(userId);
+        return Result.ok();
+    }
+
+    /** 重置密码 */
+    @PostMapping("/users/{userId}/reset-password")
+    public Result<Void> resetPassword(@PathVariable Long userId, @RequestBody Map<String, String> body) {
+        userManageService.resetPassword(userId, body.get("newPassword"));
+        return Result.ok();
+    }
+
     /** 启用/禁用用户 */
     @PostMapping("/users/{userId}/status")
     public Result<User> userStatus(@PathVariable Long userId, @RequestParam boolean enable) {
@@ -107,5 +137,19 @@ public class AdminOpsController {
     @PostMapping("/users/{userId}/role")
     public Result<User> userRole(@PathVariable Long userId, @RequestParam Integer role) {
         return Result.ok(userManageService.changeRole(userId, role));
+    }
+
+    // ---------- 系统设置 ----------
+
+    /** 系统配置列表 */
+    @GetMapping("/settings")
+    public Result<List<SystemConfig>> settings() {
+        return Result.ok(systemConfigService.list());
+    }
+
+    /** 批量保存系统配置 */
+    @PostMapping("/settings")
+    public Result<List<SystemConfig>> saveSettings(@RequestBody Map<String, String> configs) {
+        return Result.ok(systemConfigService.save(configs));
     }
 }

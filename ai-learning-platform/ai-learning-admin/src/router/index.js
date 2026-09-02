@@ -17,6 +17,7 @@ const routes = [
         component: () => import('../layouts/RouteGroup.vue'),
         children: [
           { path: 'manage', name: 'course', component: () => import('../views/teacher/CourseManageView.vue') },
+          { path: 'students', name: 'course-students', component: () => import('../views/course/CourseStudentsView.vue') },
           { path: '', redirect: { name: 'course' } }
         ]
       },
@@ -49,6 +50,7 @@ const routes = [
         children: [
           { path: 'review', name: 'course-review', component: () => import('../views/admin/CourseReviewView.vue') },
           { path: 'manage', name: 'admin-course', component: () => import('../views/admin/CourseManageAdminView.vue') },
+          { path: 'students', name: 'admin-course-students', component: () => import('../views/course/CourseStudentsView.vue') },
           { path: '', redirect: { name: 'course-review' } }
         ]
       },
@@ -75,6 +77,9 @@ const routes = [
       },
       // 用户管理（二级路由，直接对应功能页）
       { path: 'admin/user', name: 'user-manage', component: () => import('../views/admin/UserManageView.vue') },
+
+      // 系统设置（管理员）
+      { path: 'admin/settings', name: 'settings', component: () => import('../views/admin/SystemSettingsView.vue') },
 
       // ================= 个人中心（教师/管理员共用） =================
       { path: 'profile', name: 'Profile', component: () => import('../views/profile/ProfileView.vue') }

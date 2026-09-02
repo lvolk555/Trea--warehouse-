@@ -35,7 +35,8 @@ onUnmounted(() => {
 const teacherMenus = [
   { key: 'Dashboard', label: '工作台', icon: DashboardOutlined },
   { key: 'course-group', label: '教学管理', icon: BookOutlined, children: [
-    { key: 'course', label: '课程管理' }
+    { key: 'course', label: '课程管理' },
+    { key: 'course-students', label: '学生管理' }
   ] },
   { key: 'exam-group', label: '考试管理', icon: FormOutlined, children: [
     { key: 'question', label: '题库管理' },
@@ -52,7 +53,8 @@ const adminMenus = [
   { key: 'Dashboard', label: '数据看板', icon: DashboardOutlined },
   { key: 'course-group', label: '课程管理', icon: BookOutlined, children: [
     { key: 'course-review', label: '课程审核' },
-    { key: 'admin-course', label: '课程管理' }
+    { key: 'admin-course', label: '课程管理' },
+    { key: 'admin-course-students', label: '学生管理' }
   ] },
   { key: 'ops-group', label: '运营管理', icon: NotificationOutlined, children: [
     { key: 'notice', label: '公告管理' },
@@ -77,7 +79,7 @@ function onOpenChange(keys) {
 }
 
 // 菜单点击跳转（未开发的模块给出提示）
-const developedRoutes = ['Dashboard', 'course', 'course-review', 'admin-course', 'question', 'exam', 'ai-generate', 'ai-grade', 'notice', 'comment', 'points-rule', 'points-activity', 'exchange-record', 'user-manage']
+const developedRoutes = ['Dashboard', 'course', 'course-students', 'course-review', 'admin-course', 'admin-course-students', 'question', 'exam', 'ai-generate', 'ai-grade', 'notice', 'comment', 'points-rule', 'points-activity', 'exchange-record', 'user-manage', 'settings']
 function handleMenuClick({ key }) {
   if (developedRoutes.includes(key)) {
     router.push({ name: key })

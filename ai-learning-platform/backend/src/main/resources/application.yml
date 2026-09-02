@@ -29,14 +29,14 @@ spring:
       max-attempts: 1
     openai:
       # 任意 OpenAI 兼容端点均可切换（智谱 GLM / DeepSeek / OpenAI 等）
-      api-key: ${ZHIPU_API_KEY:bfc7b00a5ba340aea4ae4ba996ae0795.tRXEh02gfPwBoGBx}
+      api-key: ${ZHIPU_API_KEY:7bcfccd6e77e416789ae78ae4ddcec23.7OSmeF0NkcaMOqZS}
       base-url: ${AI_BASE_URL:https://open.bigmodel.cn/api/paas/v4}
       chat:
         # 智谱 OpenAI 兼容端点的补全路径（默认 /v1/chat/completions 不适用）
         completions-path: /chat/completions
         options:
-          # GLM-4.6V-Flash（多模态视觉模型，完全免费，兼顾文本问答/出题/批改场景）
-          model: ${AI_MODEL:glm-4.6v-flash}
+          # GLM-4.7-Flash（免费模型，兼顾文本问答/出题/批改场景）
+          model: ${AI_MODEL:glm-4.7-flash}
           temperature: 0.7
 
 # MyBatis-Plus 配置
