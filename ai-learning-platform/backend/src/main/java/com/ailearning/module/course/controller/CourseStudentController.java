@@ -43,12 +43,11 @@ public class CourseStudentController {
         return Result.ok(studentService.addStudent(courseId, dto));
     }
 
-    /** 更新学生选课信息（进度） */
-    @PutMapping("/{enrollmentId}")
-    public Result<Map<String, Object>> update(@PathVariable Long courseId,
-                                              @PathVariable Long enrollmentId,
-                                              @RequestBody CourseStudentService.UpdateStudentDTO dto) {
-        return Result.ok(studentService.updateStudent(courseId, enrollmentId, dto));
+    /** 学生小节完成明细（章节 → 小节 + 完成状态，教师/管理员查看学生学习情况） */
+    @GetMapping("/{studentId}/progress")
+    public Result<List<Map<String, Object>>> progress(@PathVariable Long courseId,
+                                                       @PathVariable Long studentId) {
+        return Result.ok(studentService.progressDetail(courseId, studentId));
     }
 
     /** 移除学生 */

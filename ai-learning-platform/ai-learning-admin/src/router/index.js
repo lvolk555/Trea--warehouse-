@@ -75,8 +75,17 @@ const routes = [
           { path: '', redirect: { name: 'points-rule' } }
         ]
       },
-      // 用户管理（二级路由，直接对应功能页）
-      { path: 'admin/user', name: 'user-manage', component: () => import('../views/admin/UserManageView.vue') },
+      // 用户管理（二级分组路由：角色分类 → 三级功能页）
+      {
+        path: 'admin/user',
+        component: () => import('../layouts/RouteGroup.vue'),
+        children: [
+          { path: 'student', name: 'user-student', component: () => import('../views/admin/user/UserStudentView.vue') },
+          { path: 'teacher', name: 'user-teacher', component: () => import('../views/admin/user/UserTeacherView.vue') },
+          { path: 'manager', name: 'user-manager', component: () => import('../views/admin/user/UserManagerAccountView.vue') },
+          { path: '', redirect: { name: 'user-student' } }
+        ]
+      },
 
       // 系统设置（管理员）
       { path: 'admin/settings', name: 'settings', component: () => import('../views/admin/SystemSettingsView.vue') },

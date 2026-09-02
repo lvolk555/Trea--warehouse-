@@ -1,12 +1,21 @@
 <script setup>
-import { ref, reactive, computed, watch, onMounted } from 'vue'
+import { ref, reactive, computed, watch, onMounted, onUnmounted } from 'vue'
 import { message, Modal } from 'ant-design-vue'
-import { UserAddOutlined, SearchOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons-vue'
+import { UserAddOutlined, DeleteOutlined, EyeOutlined, PlayCircleOutlined, FileTextOutlined, CheckCircleOutlined, ClockCircleOutlined } from '@ant-design/icons-vue'
 import * as courseApi from '../../api/course'
 import * as opsApi from '../../api/ops'
 import { useUserStore } from '../../stores/user'
 
 const userStore = useUserStore()
+
+// ================= 移动端适配 =================
+const isMobile = ref(false)
+function checkWidth() {
+  isMobile.value = window.innerWidth <= 768
+}
+checkWidth()
+window.addEventListener('resize', checkWidth)
+onUnmounted(() => window.removeEventListener('resize', checkWidth))
 
 // ================= 课程选择 =================
 const courseLoading = ref(false)
@@ -41,9 +50,9 @@ const query = reactive({ page: 1, size: 10, keyword: '' })
 const columns = [
   { title: '学生', key: 'student', width: 220 },
   { title: '账号状态', key: 'userStatus', width: 100 },
-  { title: '学习进度', key: 'progress', width: 200 },
+  { title: '学习进度', key: 'progress', width: 180 },
   { title: '选课时间', dataIndex: 'enrollTime', width: 170 },
-  { title: '操作', key: 'action', width: 200 }
+  { title: '操作', key: 'action', width: 230 }
 ]
 
 async function loadStudents() {
@@ -145,32 +154,37 @@ async function handleAdd() {
   }
 }
 
-// ================= 调整进度 =================
-const progressVisible = ref(false)
-const progressSaving = ref(false)
-const progressTarget = ref(null)
-const progressForm = reactive({ progress: 0 })
+// ================= 学习详情（小节完成明细） =================
+const detailVisible = ref(false)
+const detailLoading = ref(false)
+const detailTarget = ref(null)
+const detailData = ref([])
+const activeChapters = ref([])
 
-function openProgress(record) {
-  progressTarget.value = record
-  progressForm.progress = Number(record.progress) || 0
-  progressVisible.value = true
-}
-
-async function handleProgress() {
-  progressSaving.value = true
+async function openDetail(record) {
+  detailTarget.value = record
+  detailVisible.value = true
+  detailLoading.value = true
   try {
-    await opsApi.updateCourseStudent(courseId.value, progressTarget.value.enrollmentId, {
-      progress: progressForm.progress
-    })
-    message.success('进度已更新')
-    progressVisible.value = false
-    loadStudents()
+    detailData.value = await opsApi.studentProgress(courseId.value, record.studentId)
+    // 默认全部展开
+    activeChapters.value = detailData.value.map((_, i) => i)
   } catch (e) {
     message.error(e.message)
   } finally {
-    progressSaving.value = false
+    detailLoading.value = false
   }
+}
+
+function formatDuration(seconds) {
+  if (!seconds) return '-'
+  const m = Math.floor(seconds / 60)
+  const s = seconds % 60
+  return m > 0 ? `${m} 分 ${s} 秒` : `${s} 秒`
+}
+
+function formatTime(t) {
+  return t ? String(t).replace('T', ' ').slice(0, 16) : '-'
 }
 
 // ================= 移除学生 =================
@@ -281,7 +295,7 @@ onMounted(loadCourses)
         </template>
         <template v-else-if="column.key === 'action'">
           <a-space>
-            <a-button size="small" @click="openProgress(record)"><EditOutlined /> 调整进度</a-button>
+            <a-button size="small" @click="openDetail(record)"><EyeOutlined /> 学习详情</a-button>
             <a-button size="small" danger @click="handleRemove(record)"><DeleteOutlined /> 移除</a-button>
           </a-space>
         </template>
@@ -342,28 +356,54 @@ onMounted(loadCourses)
       </div>
     </a-modal>
 
-    <!-- 调整进度弹窗 -->
-    <a-modal
-      v-model:open="progressVisible"
-      :title="`调整进度 - ${progressTarget?.nickname || progressTarget?.username || ''}`"
-      :confirm-loading="progressSaving"
-      ok-text="保存"
-      cancel-text="取消"
-      @ok="handleProgress"
+    <!-- 学习详情抽屉：学生小节完成明细 -->
+    <a-drawer
+      v-model:open="detailVisible"
+      :title="`学习详情 - ${detailTarget?.nickname || detailTarget?.username || ''}`"
+      placement="right"
+      :width="isMobile ? '100%' : 520"
     >
-      <a-form layout="vertical" style="margin-top: 12px">
-        <a-form-item label="学习进度（%）" required>
-          <a-input-number
-            v-model:value="progressForm.progress"
-            :min="0"
-            :max="100"
-            :precision="0"
-            style="width: 100%"
-            placeholder="0 - 100"
-          />
-        </a-form-item>
-      </a-form>
-    </a-modal>
+      <a-spin :spinning="detailLoading">
+        <a-empty v-if="!detailLoading && detailData.length === 0" description="课程暂无章节小节" style="margin: 60px 0" />
+        <a-collapse v-else v-model:activeKey="activeChapters" class="chapter-collapse">
+          <a-collapse-panel v-for="(chapter, idx) in detailData" :key="idx">
+            <template #header>
+              <div class="chapter-header">
+                <span class="chapter-title">{{ chapter.chapterTitle }}</span>
+                <a-tag :color="chapter.sectionDone === chapter.sectionTotal && chapter.sectionTotal > 0 ? 'green' : 'blue'">
+                  {{ chapter.sectionDone }} / {{ chapter.sectionTotal }} 小节
+                </a-tag>
+              </div>
+            </template>
+            <div
+              v-for="section in chapter.sections"
+              :key="section.videoId"
+              class="section-item"
+              :class="{ finished: section.finished }"
+            >
+              <div class="section-icon">
+                <CheckCircleOutlined v-if="section.finished" class="icon-done" />
+                <PlayCircleOutlined v-else-if="section.sectionType === 1" class="icon-todo" />
+                <FileTextOutlined v-else class="icon-todo" />
+              </div>
+              <div class="section-body">
+                <div class="section-title">{{ section.title }}</div>
+                <div class="section-meta">
+                  <span v-if="section.sectionType === 2">图文</span>
+                  <span v-else>{{ formatDuration(section.duration) }}</span>
+                  <span class="dot">·</span>
+                  <span v-if="section.finished" class="done-text">
+                    <ClockCircleOutlined /> {{ formatTime(section.lastLearnTime) }}
+                  </span>
+                  <span v-else class="todo-text">未完成</span>
+                </div>
+              </div>
+            </div>
+            <a-empty v-if="chapter.sections.length === 0" :image="undefined" description="本章暂无小节" />
+          </a-collapse-panel>
+        </a-collapse>
+      </a-spin>
+    </a-drawer>
   </a-card>
 </template>
 
@@ -446,5 +486,79 @@ onMounted(loadCourses)
   margin-top: 8px;
   font-size: 12px;
   color: #9ca3af;
+}
+
+/* 学习详情抽屉 */
+.chapter-collapse {
+  background: #fff;
+}
+.chapter-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-right: 8px;
+}
+.chapter-title {
+  font-weight: 500;
+}
+.section-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 4px;
+  border-bottom: 1px dashed #f0f0f0;
+}
+.section-item:last-child {
+  border-bottom: none;
+}
+.section-icon {
+  font-size: 16px;
+  line-height: 22px;
+  flex-shrink: 0;
+}
+.icon-done {
+  color: #52c41a;
+}
+.icon-todo {
+  color: #d1d5db;
+}
+.section-body {
+  flex: 1;
+  min-width: 0;
+}
+.section-title {
+  font-size: 13px;
+  color: #374151;
+}
+.section-item.finished .section-title {
+  color: #111827;
+}
+.section-meta {
+  margin-top: 2px;
+  font-size: 12px;
+  color: #9ca3af;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.dot {
+  color: #d1d5db;
+}
+.done-text {
+  color: #52c41a;
+}
+.todo-text {
+  color: #f59e0b;
+}
+
+@media (max-width: 768px) {
+  .course-select {
+    min-width: 100%;
+  }
+  .keyword-input {
+    width: 100%;
+  }
 }
 </style>

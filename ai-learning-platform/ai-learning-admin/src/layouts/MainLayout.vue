@@ -65,7 +65,11 @@ const adminMenus = [
     { key: 'points-activity', label: '积分活动' },
     { key: 'exchange-record', label: '兑换记录' }
   ] },
-  { key: 'user-manage', label: '用户管理', icon: TeamOutlined },
+  { key: 'user-group', label: '用户管理', icon: TeamOutlined, children: [
+    { key: 'user-student', label: '学生管理' },
+    { key: 'user-teacher', label: '教师管理' },
+    { key: 'user-manager', label: '管理员账号' }
+  ] },
   { key: 'settings', label: '系统设置', icon: SettingOutlined }
 ]
 
@@ -79,7 +83,7 @@ function onOpenChange(keys) {
 }
 
 // 菜单点击跳转（未开发的模块给出提示）
-const developedRoutes = ['Dashboard', 'course', 'course-students', 'course-review', 'admin-course', 'admin-course-students', 'question', 'exam', 'ai-generate', 'ai-grade', 'notice', 'comment', 'points-rule', 'points-activity', 'exchange-record', 'user-manage', 'settings']
+const developedRoutes = ['Dashboard', 'course', 'course-students', 'course-review', 'admin-course', 'admin-course-students', 'question', 'exam', 'ai-generate', 'ai-grade', 'notice', 'comment', 'points-rule', 'points-activity', 'exchange-record', 'user-student', 'user-teacher', 'user-manager', 'settings']
 function handleMenuClick({ key }) {
   if (developedRoutes.includes(key)) {
     router.push({ name: key })

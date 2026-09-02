@@ -2,10 +2,16 @@ package com.ailearning.module.course.service;
 
 import com.ailearning.common.BizException;
 import com.ailearning.common.UserContext;
+import com.ailearning.module.course.entity.Chapter;
 import com.ailearning.module.course.entity.Course;
 import com.ailearning.module.course.entity.CourseEnrollment;
+import com.ailearning.module.course.entity.Video;
+import com.ailearning.module.course.mapper.ChapterMapper;
 import com.ailearning.module.course.mapper.CourseEnrollmentMapper;
 import com.ailearning.module.course.mapper.CourseMapper;
+import com.ailearning.module.course.mapper.VideoMapper;
+import com.ailearning.module.study.entity.LearningRecord;
+import com.ailearning.module.study.mapper.LearningRecordMapper;
 import com.ailearning.module.user.entity.User;
 import com.ailearning.module.user.mapper.UserMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -15,8 +21,9 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -25,7 +32,7 @@ import java.util.stream.Collectors;
  * 课程学生管理服务（教师 + 管理员）：
  * - 教师可查看/管理自己名下课程的学生；
  * - 管理员可查看/管理全部课程的学生；
- * - 支持查看学生列表、添加学生（按用户名/ID）、调整进度、移除学生。
+ * - 支持查看学生列表、添加学生（按用户名/ID）、查看学生小节完成明细、移除学生。
  */
 @Service
 @RequiredArgsConstructor
@@ -34,6 +41,9 @@ public class CourseStudentService {
     private final CourseMapper courseMapper;
     private final CourseEnrollmentMapper enrollmentMapper;
     private final UserMapper userMapper;
+    private final ChapterMapper chapterMapper;
+    private final VideoMapper videoMapper;
+    private final LearningRecordMapper learningRecordMapper;
     private final EnrollmentService enrollmentService;
 
     /** 权限校验：教师只能操作自己的课程，管理员可操作任意课程 */
@@ -144,24 +154,68 @@ public class CourseStudentService {
         }).collect(Collectors.toList());
     }
 
-    /** 更新学生选课信息（当前支持进度调整，0-100） */
-    public Map<String, Object> updateStudent(Long courseId, Long enrollmentId, UpdateStudentDTO dto) {
+    /**
+     * 学生在课程内的小节完成明细（教师/管理员查看学生学习情况）：
+     * 按章节 → 小节返回每个小节的完成状态、最后学习时间与播放位置。
+     */
+    public List<Map<String, Object>> progressDetail(Long courseId, Long studentId) {
         checkCourseAccess(courseId);
-        CourseEnrollment enrollment = getEnrollment(enrollmentId);
-        if (!enrollment.getCourseId().equals(courseId)) {
-            throw new BizException("该选课记录不属于当前课程");
+        // 校验学生存在且确实选了本课
+        User student = userMapper.selectById(studentId);
+        if (student == null) {
+            throw new BizException("学生不存在");
         }
-        if (dto.getProgress() != null) {
-            BigDecimal progress = dto.getProgress();
-            if (progress.compareTo(BigDecimal.ZERO) < 0 || progress.compareTo(new BigDecimal("100")) > 0) {
-                throw new BizException("进度取值 0-100");
-            }
-            enrollment.setProgress(progress);
+        Long enrolled = enrollmentMapper.selectCount(new LambdaQueryWrapper<CourseEnrollment>()
+                .eq(CourseEnrollment::getCourseId, courseId)
+                .eq(CourseEnrollment::getStudentId, studentId));
+        if (enrolled == null || enrolled == 0) {
+            throw new BizException("该学生未选修本课程");
         }
-        enrollmentMapper.updateById(enrollment);
-        Map<String, Object> result = new HashMap<>();
-        result.put("enrollmentId", enrollment.getId());
-        result.put("progress", enrollment.getProgress());
+
+        // 课程 → 章节（按序） → 小节（按序）
+        List<Chapter> chapters = chapterMapper.selectList(new LambdaQueryWrapper<Chapter>()
+                .eq(Chapter::getCourseId, courseId).orderByAsc(Chapter::getSortOrder));
+        if (chapters.isEmpty()) {
+            return List.of();
+        }
+        List<Long> chapterIds = chapters.stream().map(Chapter::getId).collect(Collectors.toList());
+        List<Video> videos = videoMapper.selectList(new LambdaQueryWrapper<Video>()
+                .in(Video::getChapterId, chapterIds).orderByAsc(Video::getSortOrder));
+
+        // 学生的学习记录（videoId → record）
+        List<Long> videoIds = videos.stream().map(Video::getId).collect(Collectors.toList());
+        Map<Long, LearningRecord> recordMap = videoIds.isEmpty() ? Map.of()
+                : learningRecordMapper.selectList(new LambdaQueryWrapper<LearningRecord>()
+                        .eq(LearningRecord::getStudentId, studentId)
+                        .in(LearningRecord::getVideoId, videoIds))
+                        .stream().collect(Collectors.toMap(LearningRecord::getVideoId, r -> r));
+
+        // 组装章节树
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (Chapter chapter : chapters) {
+            List<Map<String, Object>> sections = videos.stream()
+                    .filter(v -> chapter.getId().equals(v.getChapterId()))
+                    .map(v -> {
+                        LearningRecord record = recordMap.get(v.getId());
+                        Map<String, Object> section = new LinkedHashMap<>();
+                        section.put("videoId", v.getId());
+                        section.put("title", v.getTitle());
+                        section.put("sectionType", v.getSectionType());
+                        section.put("duration", v.getDuration());
+                        section.put("finished", record != null && record.getFinished() == 1);
+                        section.put("lastLearnTime", record == null ? null : record.getUpdateTime());
+                        return section;
+                    })
+                    .collect(Collectors.toList());
+            long done = sections.stream().filter(s -> (Boolean) s.get("finished")).count();
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("chapterId", chapter.getId());
+            row.put("chapterTitle", chapter.getTitle());
+            row.put("sections", sections);
+            row.put("sectionTotal", sections.size());
+            row.put("sectionDone", done);
+            result.add(row);
+        }
         return result;
     }
 
@@ -188,11 +242,5 @@ public class CourseStudentService {
     public static class AddStudentDTO {
         private Long studentId;
         private String username;
-    }
-
-    /** 更新学生请求体 */
-    @Data
-    public static class UpdateStudentDTO {
-        private BigDecimal progress;
     }
 }

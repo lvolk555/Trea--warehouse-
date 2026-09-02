@@ -9,12 +9,20 @@ import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.openai.OpenAiChatModel;
+import org.springframework.ai.openai.OpenAiChatOptions;
+import org.springframework.ai.openai.api.OpenAiApi;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.client.ReactorClientHttpRequestFactory;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
+import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
+import reactor.netty.http.client.HttpClient;
 import reactor.util.retry.Retry;
 
 import java.time.Duration;
@@ -25,9 +33,10 @@ import java.util.Map;
 /**
  * AI 对话客户端：基于 Spring AI 的 OpenAI 通用协议实现
  *
- * 通过 spring-ai-starter-model-openai 自动装配 OpenAiChatModel，以标准 OpenAI 协议
- * 对接任意兼容端点（当前为智谱 GLM，可通过配置无缝切换 DeepSeek/OpenAI 等，不绑定厂商 starter）。
- * 密钥从环境变量 ZHIPU_API_KEY 注入，禁止硬编码。
+ * 接入参数（密钥 / 端点 / 模型）支持两级配置：
+ * 1. 管理端「系统设置」动态配置（system_config 表，优先级高，修改后即时生效）；
+ * 2. application.yml / 环境变量（默认值）。
+ * 运行时按配置指纹缓存模型客户端，配置变化自动重建，无需重启。
  *
  * - chatStream：流式对话（SSE），用于 AI 答疑
  * - chat：一次性返回完整输出，用于 AI 出题/批改（需要完整 JSON）
@@ -39,21 +48,40 @@ import java.util.Map;
 @Service
 public class ZhipuAiClient {
 
-    private final OpenAiChatModel chatModel;
-    private final String apiKey;
+    /** 智谱 OpenAI 兼容端点的补全路径（与 application.yml 保持一致） */
+    private static final String COMPLETIONS_PATH = "/chat/completions";
+    private static final double DEFAULT_TEMPERATURE = 0.7;
+
     private final SystemConfigService systemConfigService;
 
-    public ZhipuAiClient(OpenAiChatModel chatModel,
-                         SystemConfigService systemConfigService,
-                         @Value("${spring.ai.openai.api-key:}") String apiKey) {
-        this.chatModel = chatModel;
+    /** yml / 环境变量默认配置（系统设置未覆盖时使用） */
+    private final String defaultApiKey;
+    private final String defaultBaseUrl;
+    private final String defaultModel;
+
+    /** 动态模型客户端缓存（配置指纹变化时重建） */
+    private volatile OpenAiChatModel cachedModel;
+    private volatile String cachedFingerprint = "";
+
+    public ZhipuAiClient(SystemConfigService systemConfigService,
+                         @Value("${spring.ai.openai.api-key:}") String defaultApiKey,
+                         @Value("${spring.ai.openai.base-url:}") String defaultBaseUrl,
+                         @Value("${spring.ai.openai.chat.options.model:}") String defaultModel) {
         this.systemConfigService = systemConfigService;
-        this.apiKey = apiKey;
+        this.defaultApiKey = defaultApiKey;
+        this.defaultBaseUrl = defaultBaseUrl;
+        this.defaultModel = defaultModel;
+    }
+
+    /** 生效的 API Key（系统设置优先，回退 yml 默认） */
+    private String effectiveApiKey() {
+        return systemConfigService.getValueOrDefault("ai_api_key", defaultApiKey);
     }
 
     /** API Key 是否已配置（未配置时各功能走降级提示） */
     public boolean isConfigured() {
-        return apiKey != null && !apiKey.isBlank();
+        String key = effectiveApiKey();
+        return StringUtils.hasText(key);
     }
 
     /** AI 功能是否可用：开关开启且密钥已配置 */
@@ -72,6 +100,41 @@ public class ZhipuAiClient {
     }
 
     /**
+     * 解析当前配置的模型客户端：密钥/端点/模型任一变化即重建。
+     * 使用配置指纹对比缓存，避免每次调用重复构建。
+     */
+    private OpenAiChatModel resolveModel() {
+        String apiKey = effectiveApiKey();
+        String baseUrl = systemConfigService.getValueOrDefault("ai_base_url", defaultBaseUrl);
+        String model = systemConfigService.getValueOrDefault("ai_model", defaultModel);
+
+        String fingerprint = apiKey + "|" + baseUrl + "|" + model;
+        if (cachedModel == null || !fingerprint.equals(cachedFingerprint)) {
+            // 出网代理跟随 JVM 系统参数（-Dhttps.proxyHost 等）；未设置时不启用，兼容直连环境
+            HttpClient httpClient = HttpClient.create().proxyWithSystemProperties();
+            OpenAiApi api = OpenAiApi.builder()
+                    .apiKey(apiKey)
+                    .baseUrl(baseUrl)
+                    .completionsPath(COMPLETIONS_PATH)
+                    .restClientBuilder(RestClient.builder()
+                            .requestFactory(new ReactorClientHttpRequestFactory(httpClient)))
+                    .webClientBuilder(WebClient.builder()
+                            .clientConnector(new ReactorClientHttpConnector(httpClient)))
+                    .build();
+            this.cachedModel = OpenAiChatModel.builder()
+                    .openAiApi(api)
+                    .defaultOptions(OpenAiChatOptions.builder()
+                            .model(model)
+                            .temperature(DEFAULT_TEMPERATURE)
+                            .build())
+                    .build();
+            this.cachedFingerprint = fingerprint;
+            log.info("AI 模型配置已加载/刷新: model={}, baseUrl={}", model, baseUrl);
+        }
+        return cachedModel;
+    }
+
+    /**
      * 流式对话：逐块返回模型输出文本
      *
      * @param systemPrompt 系统提示词
@@ -80,13 +143,14 @@ public class ZhipuAiClient {
     public Flux<String> chatStream(String systemPrompt, List<Map<String, String>> messages) {
         checkAvailable();
         Prompt prompt = buildPrompt(systemPrompt, messages);
-        return chatModel.stream(prompt)
+        return resolveModel().stream(prompt)
                 .mapNotNull(resp -> resp.getResult() == null || resp.getResult().getOutput() == null
                         ? null : resp.getResult().getOutput().getText())
                 .filter(text -> text != null && !text.isEmpty())
                 // 限流自动重试（最多 2 次，指数退避），避免瞬时高峰导致失败
                 .retryWhen(rateLimitRetry())
-                .timeout(Duration.ofSeconds(60))
+                // 免费/低配模型高峰期首 token 可达 60s+，放宽到 120s
+                .timeout(Duration.ofSeconds(120))
                 .onErrorMap(e -> e instanceof BizException ? e
                         : new BizException("AI 服务暂时不可用，请稍后重试"));
     }
@@ -97,7 +161,7 @@ public class ZhipuAiClient {
     public Mono<String> chat(String systemPrompt, List<Map<String, String>> messages) {
         checkAvailable();
         Prompt prompt = buildPrompt(systemPrompt, messages);
-        return Mono.fromCallable(() -> chatModel.call(prompt))
+        return Mono.fromCallable(() -> resolveModel().call(prompt))
                 .map(resp -> {
                     String text = resp.getResult() == null || resp.getResult().getOutput() == null
                             ? null : resp.getResult().getOutput().getText();
@@ -110,7 +174,8 @@ public class ZhipuAiClient {
                 .subscribeOn(Schedulers.boundedElastic())
                 // 限流自动重试（最多 2 次，指数退避），避免瞬时高峰导致失败
                 .retryWhen(rateLimitRetry())
-                .timeout(Duration.ofSeconds(90))
+                // 出题/批改需要完整输出，高峰期耗时更长，放宽到 150s
+                .timeout(Duration.ofSeconds(150))
                 .onErrorMap(e -> e instanceof BizException ? e
                         : new BizException("AI 服务暂时不可用，请稍后重试"));
     }
@@ -128,9 +193,9 @@ public class ZhipuAiClient {
             if (t instanceof RestClientResponseException ex && ex.getStatusCode().value() == 429) {
                 return true;
             }
-            // Spring AI 会将上游 4xx 包装为 AiException，message 形如 "HTTP 429 - {...}"
+            // Spring AI 会将上游错误包装为 AiException，message 形如 "429 - {...}" 或 "HTTP 429 - {...}"
             String msg = t.getMessage();
-            if (msg != null && msg.startsWith("HTTP 429")) {
+            if (msg != null && (msg.startsWith("429") || msg.startsWith("HTTP 429"))) {
                 return true;
             }
         }

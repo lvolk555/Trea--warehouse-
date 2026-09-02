@@ -467,7 +467,10 @@ INSERT INTO `points_account` (`user_id`, `balance`, `total_earned`, `total_spent
 INSERT INTO `system_config` (`config_key`, `config_value`, `remark`) VALUES
 ('site_name', 'AI 辅助在线学习平台', '站点名称'),
 ('ai_enabled', '1', 'AI 功能总开关（1开启 0关闭，关闭后答疑/出题/批改均降级提示）'),
-('register_enabled', '1', '开放学生自主注册（1开启 0关闭）');
+('register_enabled', '1', '开放学生自主注册（1开启 0关闭）'),
+('ai_api_key', '', 'AI 服务 API 密钥（留空使用后端默认配置，修改后即时生效）'),
+('ai_model', '', 'AI 模型名称（留空使用后端默认配置，如 glm-4.7-flash）'),
+('ai_base_url', '', 'AI 服务端点（OpenAI 兼容，留空使用后端默认配置）');
 
 INSERT INTO `points_record` (`user_id`, `type`, `change_value`, `description`) VALUES
 (3, 6, 100, '注册赠送积分'),

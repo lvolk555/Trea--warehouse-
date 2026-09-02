@@ -41,5 +41,5 @@ export const saveSystemSettings = (data) => request.post('/admin/ops/settings', 
 export const courseStudents = (courseId, params) => request.get(`/course/${courseId}/students`, { params })
 export const courseStudentCandidates = (courseId, params) => request.get(`/course/${courseId}/students/candidates`, { params })
 export const addCourseStudent = (courseId, data) => request.post(`/course/${courseId}/students`, data)
-export const updateCourseStudent = (courseId, enrollmentId, data) => request.put(`/course/${courseId}/students/${enrollmentId}`, data)
+export const studentProgress = (courseId, studentId) => request.get(`/course/${courseId}/students/${studentId}/progress`)
 export const removeCourseStudent = (courseId, enrollmentId) => request.delete(`/course/${courseId}/students/${enrollmentId}`)
