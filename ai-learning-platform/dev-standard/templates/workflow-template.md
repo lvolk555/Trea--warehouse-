@@ -1,6 +1,6 @@
-# 流程模板（需求 → 交付全链路）
+# 流程模板（需求 → 交付全链路，通用型）
 
-> 每个需求/阶段的执行剧本。按顺序执行，不跳步。
+> 与业务领域无关。每个需求/阶段按此剧本执行，不跳步。
 
 ## 一、需求拆解表模板
 
@@ -11,7 +11,7 @@
 |---|------|----------|
 | 1 | 用户提出的功能 A | 后端：xxx 接口；前端：xxx 页面 |
 | 2 | 用户提出的功能 B | 配置项/权限/适配处理方式 |
-| 3 | 隐含期望（如界面不显示 ID） | 显式化为要点，按规范处理 |
+| 3 | 隐含期望（如界面不显示 ID、手机能正常用） | 显式化为要点，按规范处理 |
 ```
 
 同时建 todo 清单（每要点一条），随开发即时更新。
@@ -22,7 +22,7 @@
 1. 数据库     改 sql/init.sql（建表/加字段/初始数据）→ 本地执行
 2. 后端       entity → mapper → service（鉴权+事务）→ controller → VO/DTO
 3. 前端       api 封装 → 共用组件 → 薄壳视图 → 路由（三级结构）→ 菜单
-4. 联调       启动后端（backend 目录）+ 前端 dev，浏览器走完整用户路径
+4. 联调       启动后端 + 前端 dev，浏览器走完整用户路径
 ```
 
 ## 三、三层测试模板
@@ -43,16 +43,16 @@ def check(name, resp, expect_code=200):
     status = '通过' if resp.get('code') == expect_code else '失败'
     print(f'[{status}] {name}: {resp.get("message", "")[:50]}')
 
-# 登录拿 token
+# 登录拿 token（角色按项目业务定义）
 admin = req('POST', '/auth/login', body={'username': 'admin', 'password': '***'})['data']['token']
-teacher = req('POST', '/auth/login', body={'username': 'teacher1', 'password': '***'})['data']['token']
-student = req('POST', '/auth/login', body={'username': 'student1', 'password': '***'})['data']['token']
+owner = req('POST', '/auth/login', body={'username': 'owner1', 'password': '***'})['data']['token']
+user  = req('POST', '/auth/login', body={'username': 'user1', 'password': '***'})['data']['token']
 
 # 正常路径
 check('列表查询', req('GET', '/admin/ops/users?page=1&size=10', token=admin))
 # 权限边界（必测）
-check('学生访问管理接口应被拒', req('GET', '/admin/ops/users', token=student), expect_code=403)
-check('教师越权他人资源应被拒', req('GET', '/course/999/students', token=teacher), expect_code=403)
+check('普通用户访问管理接口应被拒', req('GET', '/admin/ops/users', token=user), expect_code=403)
+check('资源归属者越权他人资源应被拒', req('GET', '/product/999/items', token=owner), expect_code=403)
 ```
 
 ### 3.2 浏览器测试（验收标准）
@@ -102,7 +102,7 @@ check('教师越权他人资源应被拒', req('GET', '/course/999/students', to
 （已知问题、外部依赖、边界情况）
 
 ## N+4、本阶段新增/修改文件清单
-（按 backend / admin-web / student-web 分组，标注关键改动）
+（按 backend / 各前端工程分组，标注关键改动）
 ```
 
 ## 五、仓库同步脚本模板（sync.sh）
@@ -118,7 +118,8 @@ cp -f /workspace/docs/*.md <project>/docs/ 2>/dev/null || true
 
 EXCLUDES="--exclude=node_modules --exclude=target --exclude=dist --exclude=.m2 --exclude=*.log"
 rsync -a --delete $EXCLUDES /workspace/backend/ <project>/backend/ || true
-rsync -a --delete $EXCLUDES /workspace/admin-web/ <project>/admin-web/ || true
+rsync -a --delete $EXCLUDES /workspace/<admin-web>/ <project>/<admin-web>/ || true
+rsync -a --delete $EXCLUDES /workspace/<user-web>/ <project>/<user-web>/ || true
 
 if [ -n "$(git status --porcelain)" ]; then
   git add <project>
@@ -144,14 +145,14 @@ fi
 6. 记录    写入当阶段报告（现象→排查→根因→方案）
 ```
 
-## 七、阶段划分参考
+## 七、阶段划分参考（按项目规模裁剪）
 
 | 阶段 | 主题 | 产出 |
 |------|------|------|
 | 一 | 环境搭建与基础骨架 | 工程初始化、登录鉴权、数据库连通 |
 | 二 | 核心业务主流程 | 最主要领域模型与 CRUD |
 | 三 | 扩展业务模块 | 依赖主流程的次级模块 |
-| 四 | 亮点功能 | AI 等差异化能力 |
-| 五~六 | 运营与数据 | 积分/活动/统计分析 |
+| 四 | 亮点/集成功能 | 第三方服务、AI 等差异化能力 |
+| 五~六 | 运营与数据 | 积分/活动/统计分析等运营体系 |
 | 七 | 功能与接口测试 | 全量测试 + Bug 修复 |
 | 八+ | 深度优化 | 性能、状态机、资源本地化、体验打磨 |

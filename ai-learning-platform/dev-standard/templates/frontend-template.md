@@ -1,14 +1,14 @@
-# 前端代码模板（Vue 3 + Vite 双端工程）
+# 前端代码模板（Vue 3 + Vite 多端工程，通用型）
 
-> 管理端用 Ant Design Vue（端口 5174），用户端用 Naive UI（端口 5173）。所有片段可直接复制替换。
+> 与业务领域无关。按用户群拆独立前端工程，UI 库可按端选择（示例：管理端 Ant Design Vue、用户端 Naive UI）。所有片段可直接复制替换。
 
 ## 一、工程结构
 
 ```
 src/
-├── api/            # 按后端模块分文件：ops.js / course.js / exam.js
+├── api/            # 按后端模块分文件：ops.js / product.js / order.js
 ├── views/          # 页面，目录按"角色/功能域"两级组织
-│   └── admin/user/ # 同类多页：UserList.vue（共用组件）+ 三个薄壳视图
+│   └── admin/user/ # 同类多页：UserList.vue（共用组件）+ 多个薄壳视图
 ├── components/     # 跨页面复用组件
 ├── layouts/
 │   ├── MainLayout.vue   # 一级布局壳：侧边栏 + 顶栏 + <router-view>
@@ -18,6 +18,8 @@ src/
 └── utils/request.js     # axios 统一封装
 ```
 
+端口约定：每个前端工程固定独立端口（如管理端 5174、用户端 5173），互不冲突。
+
 ## 二、axios 统一封装（request.js）
 
 ```js
@@ -25,7 +27,7 @@ import axios from 'axios'
 import { useUserStore } from '../stores/user'
 
 // 参数二次编码：兼容反向代理对 query string 预解码一次的行为
-// （配合后端 QueryParamDecodeFilter 容错解码，直连/代理行为一致）
+// （配合后端容错解码过滤器，直连/代理行为一致）
 const request = axios.create({
   baseURL: '/api',
   timeout: 15000,
@@ -42,7 +44,7 @@ const request = axios.create({
   }
 })
 
-// 请求拦截：附加 token（键名按端隔离：admin_token / student_token）
+// 请求拦截：附加 token（键名按端隔离，如 admin_token / user_token）
 request.interceptors.request.use((config) => {
   const token = localStorage.getItem('admin_token')
   if (token) config.headers.Authorization = `Bearer ${token}`
@@ -85,18 +87,18 @@ const routes = [
     children: [
       { path: 'dashboard', name: 'Dashboard', component: () => import('../views/dashboard/DashboardView.vue') },
 
-      // ===== 二级分类 + 三级功能页（标准结构）=====
+      // ===== 二级分类 + 三级功能页（标准结构，分类名按业务定）=====
       {
         path: 'admin/user',                                          // 二级：功能分类
         component: () => import('../layouts/RouteGroup.vue'),
         children: [
-          { path: 'student', name: 'user-student',                  // 三级：功能页
-            component: () => import('../views/admin/user/UserStudentView.vue') },
-          { path: 'teacher', name: 'user-teacher',
-            component: () => import('../views/admin/user/UserTeacherView.vue') },
+          { path: 'member',  name: 'user-member',   // 三级：功能页
+            component: () => import('../views/admin/user/UserMemberView.vue') },
+          { path: 'staff',  name: 'user-staff',
+            component: () => import('../views/admin/user/UserStaffView.vue') },
           { path: 'manager', name: 'user-manager',
-            component: () => import('../views/admin/user/UserManagerAccountView.vue') },
-          { path: '', redirect: { name: 'user-student' } }         // 分类默认跳第一个
+            component: () => import('../views/admin/user/ManagerAccountView.vue') },
+          { path: '', redirect: { name: 'user-member' } }         // 分类默认跳第一个
         ]
       },
 
@@ -115,20 +117,20 @@ import { TeamOutlined, SettingOutlined } from '@ant-design/icons-vue'
 
 const menus = [
   { key: 'Dashboard', label: '工作台' },
-  { key: 'course-group', label: '课程管理', icon: TeamOutlined, children: [   // 分组菜单
-    { key: 'course-list', label: '课程列表' },
-    { key: 'course-students', label: '学生管理' }
+  { key: 'product-group', label: '商品管理', icon: TeamOutlined, children: [   // 分组菜单
+    { key: 'product-list', label: '商品列表' },
+    { key: 'product-review', label: '商品审核' }
   ] },
   { key: 'user-group', label: '用户管理', icon: TeamOutlined, children: [
-    { key: 'user-student', label: '学生管理' },
-    { key: 'user-teacher', label: '教师管理' },
+    { key: 'user-member', label: '会员管理' },
+    { key: 'user-staff', label: '员工管理' },
     { key: 'user-manager', label: '管理员账号' }
   ] },
   { key: 'settings', label: '系统设置' }
 ]
 
 // 白名单控制菜单可见性（未开发的入口不上线）
-const developedRoutes = ['Dashboard', 'user-student', 'user-teacher', 'user-manager', 'settings']
+const developedRoutes = ['Dashboard', 'user-member', 'user-staff', 'user-manager', 'settings']
 ```
 
 ### 3.4 api 封装（api/ops.js）
@@ -150,13 +152,13 @@ export const resetUserPassword = (id, newPassword) =>
 
 ```vue
 <script setup>
-import { ref, reactive, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { message, Modal } from 'ant-design-vue'
 import * as opsApi from '../../../api/ops'
 import { useUserStore } from '../../../stores/user'
 
 const props = defineProps({
-  role: { type: Number, required: true },      // 1学生 2教师 3管理员
+  type: { type: Number, required: true },       // 数据域标识（按业务定义）
   title: { type: String, required: true }
 })
 
@@ -173,10 +175,10 @@ function checkWidth() { isMobile.value = window.innerWidth <= 768 }
 
 // 表格列：无 ID 列，只展示名称类字段
 const columns = [
-  { title: '用户名', dataIndex: 'username', width: 130 },
-  { title: '昵称', dataIndex: 'nickname', width: 130 },
+  { title: '登录名', dataIndex: 'username', width: 130 },
+  { title: '展示名', dataIndex: 'nickname', width: 130 },
   { title: '状态', key: 'status', width: 90 },
-  { title: '注册时间', dataIndex: 'createTime', width: 170 },
+  { title: '创建时间', dataIndex: 'createTime', width: 170 },
   { title: '操作', key: 'action', width: 300, fixed: 'right' }
 ]
 
@@ -186,7 +188,7 @@ async function load() {
     const res = await opsApi.userPage({
       page: page.value, size: 10,
       keyword: keyword.value || undefined,   // 按名称搜索
-      role: props.role
+      type: props.type
     })
     list.value = res.records
     total.value = Number(res.total)
@@ -201,12 +203,12 @@ async function load() {
 function handleDelete(record) {
   Modal.confirm({
     title: '删除用户',
-    content: `确定删除用户「${record.username}」吗？其选课、学习、考试、积分等数据将一并清除，不可恢复。`,
+    content: `确定删除「${record.nickname || record.username}」吗？其全部关联业务数据将一并清除，不可恢复。`,
     okText: '删除', okType: 'danger', cancelText: '取消',
     onOk: async () => {
       try {
         await opsApi.deleteUser(record.id)
-        message.success('用户已删除')
+        message.success('已删除')
         load()
       } catch (e) { message.error(e.message) }
     }
@@ -223,7 +225,7 @@ onUnmounted(() => window.removeEventListener('resize', checkWidth))
 
     <!-- 工具栏：名称关键字搜索 -->
     <div class="toolbar">
-      <a-input v-model:value="keyword" placeholder="用户名/昵称" allow-clear
+      <a-input v-model:value="keyword" placeholder="名称/登录名" allow-clear
                class="toolbar-input" @press-enter="() => { page = 1; load() }" />
       <a-button type="primary" @click="() => { page = 1; load() }">查询</a-button>
     </div>
@@ -261,6 +263,11 @@ onUnmounted(() => window.removeEventListener('resize', checkWidth))
           <a-badge :status="record.status === 1 ? 'success' : 'error'"
                    :text="record.status === 1 ? '正常' : '禁用'" />
         </div>
+        <!-- 移动端操作：块状按钮 -->
+        <div class="mobile-actions">
+          <a-button size="small" block @click="openEdit(record)">编辑</a-button>
+          <a-button size="small" block danger @click="handleDelete(record)">删除</a-button>
+        </div>
       </div>
     </div>
 
@@ -270,12 +277,12 @@ onUnmounted(() => window.removeEventListener('resize', checkWidth))
 </template>
 ```
 
-### 4.2 薄壳视图（三个三级页面各一个）
+### 4.2 薄壳视图（每个三级页面一个）
 
 ```vue
-<!-- UserStudentView.vue -->
+<!-- UserMemberView.vue -->
 <template>
-  <UserList :role="1" title="学生管理" />
+  <UserList :type="1" title="会员管理" />
 </template>
 <script setup>
 import UserList from './UserList.vue'
@@ -305,7 +312,7 @@ import vue from '@vitejs/plugin-vue'
 export default defineConfig({
   plugins: [vue()],
   server: {
-    port: 5174,                                  // 管理端固定端口（用户端 5173）
+    port: 5174,                                  // 本工程固定端口
     proxy: {
       '/api': { target: 'http://localhost:8080', changeOrigin: true }
     }
@@ -315,7 +322,7 @@ export default defineConfig({
 
 ## 七、UI 检查清单（提交前自查）
 
-- [ ] 列表/标签/详情无任何数据库 ID（一律名称，昵称优先）
+- [ ] 列表/标签/详情无任何数据库 ID、内部编码（一律名称，展示名优先）
 - [ ] 筛选是名称文本搜索框，不是 ID 数字框
 - [ ] 路由符合三级标准（分类分组 + 功能页）
 - [ ] 列表页有 isMobile 双布局；弹窗/抽屉宽度自适应
