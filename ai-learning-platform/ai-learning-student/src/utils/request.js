@@ -2,9 +2,22 @@ import axios from 'axios'
 import { useUserStore } from '../stores/user'
 
 // axios 实例：统一携带 token、统一处理响应
+// 参数序列化：对参数值二次编码（% → %25），兼容反向代理对 query string
+// 预先解码一次的行为（后端 QueryParamDecodeFilter 会做对应容错解码）
 const request = axios.create({
   baseURL: '/api',
-  timeout: 15000
+  timeout: 15000,
+  paramsSerializer: {
+    serialize: (params) => {
+      const parts = []
+      Object.keys(params || {}).forEach((key) => {
+        const value = params[key]
+        if (value === undefined || value === null || value === '') return
+        parts.push(`${encodeURIComponent(key)}=${encodeURIComponent(String(value)).replace(/%/g, '%25')}`)
+      })
+      return parts.join('&')
+    }
+  }
 })
 
 // 请求拦截：附加 Authorization 头（Sa-Token 从请求头读取，前缀 Bearer）

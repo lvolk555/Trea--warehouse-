@@ -22,7 +22,6 @@ const statusFilter = ref(null)
 const roleText = { 1: '学生', 2: '教师', 3: '管理员' }
 
 const columns = [
-  { title: 'ID', dataIndex: 'id', width: 70 },
   { title: '用户名', dataIndex: 'username', width: 130 },
   { title: '昵称', dataIndex: 'nickname', width: 130 },
   { title: '状态', key: 'status', width: 90 },

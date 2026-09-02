@@ -88,7 +88,7 @@ onMounted(loadData)
           <div class="grade-header">
             <a-tag color="orange">简答题</a-tag>
             <a-tag>{{ item.examTitle }}</a-tag>
-            <a-tag color="blue">学生 ID：{{ item.studentId }}</a-tag>
+            <a-tag color="blue">学生：{{ item.studentName }}</a-tag>
           </div>
           <div class="q-content">{{ item.questionContent }}</div>
           <a-descriptions size="small" :column="1" bordered style="margin-top: 8px">

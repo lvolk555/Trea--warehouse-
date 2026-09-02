@@ -41,12 +41,12 @@ public class AdminPointsController {
         return Result.ok(ruleService.update(id, ruleValue, dailyLimit, enabled));
     }
 
-    /** 兑换记录分页 */
+    /** 兑换记录分页（按学生名称/用户名关键字筛选） */
     @GetMapping("/exchanges")
     public Result<IPage<CourseExchangeRecordVO>> exchanges(@RequestParam(defaultValue = "1") int page,
                                                            @RequestParam(defaultValue = "10") int size,
-                                                           @RequestParam(required = false) Long userId) {
-        return Result.ok(exchangeService.adminPage(page, size, userId));
+                                                           @RequestParam(required = false) String keyword) {
+        return Result.ok(exchangeService.adminPage(page, size, keyword));
     }
 
     /** 活动列表（含未发布） */

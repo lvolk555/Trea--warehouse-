@@ -3,6 +3,7 @@ package com.ailearning.module.points.controller;
 import com.ailearning.common.Result;
 import com.ailearning.common.UserContext;
 import com.ailearning.module.points.dto.ActivityClaimResult;
+import com.ailearning.module.points.dto.CourseExchangeRecordVO;
 import com.ailearning.module.points.entity.CourseExchangeRecord;
 import com.ailearning.module.points.entity.PointsAccount;
 import com.ailearning.module.points.entity.PointsActivity;
@@ -74,9 +75,9 @@ public class StudentPointsController {
         return Result.ok(exchangeService.exchange(courseId, couponId));
     }
 
-    /** 我的兑换记录 */
+    /** 我的兑换记录（含课程名称） */
     @GetMapping("/exchange/my")
-    public Result<List<CourseExchangeRecord>> myExchanges() {
+    public Result<List<CourseExchangeRecordVO>> myExchanges() {
         return Result.ok(exchangeService.myExchanges());
     }
 

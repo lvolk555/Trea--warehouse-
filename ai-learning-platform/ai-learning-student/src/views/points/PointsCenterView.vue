@@ -271,11 +271,11 @@ onMounted(() => {
           <h3 style="margin: 24px 0 12px">我的兑换记录</h3>
           <n-table :bordered="false" :single-line="false" size="small">
             <thead>
-              <tr><th>课程 ID</th><th>优惠</th><th>实付积分</th><th>状态</th><th>时间</th></tr>
+              <tr><th>课程名称</th><th>优惠</th><th>实付积分</th><th>状态</th><th>时间</th></tr>
             </thead>
             <tbody>
               <tr v-for="e in exchanges" :key="e.id">
-                <td>#{{ e.courseId }}</td>
+                <td>{{ e.courseName || '-' }}</td>
                 <td>{{ e.discount ? `-${e.discount}` : '-' }}</td>
                 <td>{{ e.pointsCost }}</td>
                 <td><n-tag :type="e.status === 1 ? 'success' : 'error'" size="small">{{ e.status === 1 ? '成功' : '失败' }}</n-tag></td>

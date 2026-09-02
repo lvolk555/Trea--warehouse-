@@ -135,22 +135,45 @@ public class ExchangeService {
     }
 
     /**
-     * 我的兑换记录
+     * 我的兑换记录（补充课程名称，前端只展示名称不展示 ID）
      */
-    public List<CourseExchangeRecord> myExchanges() {
+    public List<CourseExchangeRecordVO> myExchanges() {
         UserContext.checkRole(UserContext.ROLE_STUDENT);
-        return exchangeMapper.selectList(new LambdaQueryWrapper<CourseExchangeRecord>()
+        List<CourseExchangeRecord> records = exchangeMapper.selectList(new LambdaQueryWrapper<CourseExchangeRecord>()
                 .eq(CourseExchangeRecord::getUserId, UserContext.userId())
                 .orderByDesc(CourseExchangeRecord::getCreateTime));
+        List<Long> courseIds = records.stream().map(CourseExchangeRecord::getCourseId).distinct().toList();
+        Map<Long, Course> courseMap = courseIds.isEmpty() ? Map.of()
+                : courseMapper.selectBatchIds(courseIds).stream()
+                        .collect(Collectors.toMap(Course::getId, Function.identity()));
+        return records.stream().map(r -> {
+            CourseExchangeRecordVO vo = new CourseExchangeRecordVO();
+            org.springframework.beans.BeanUtils.copyProperties(r, vo);
+            Course c = courseMap.get(r.getCourseId());
+            vo.setCourseName(c == null ? "课程已下架" : c.getTitle());
+            return vo;
+        }).toList();
     }
 
     /**
-     * 管理员：兑换记录分页（可按学生筛选），补充学生名称与课程名称
+     * 管理员：兑换记录分页（可按学生名称/用户名关键字筛选），补充学生名称与课程名称
      */
-    public IPage<CourseExchangeRecordVO> adminPage(int page, int size, Long userId) {
+    public IPage<CourseExchangeRecordVO> adminPage(int page, int size, String keyword) {
         UserContext.checkRole(UserContext.ROLE_ADMIN);
+        // 关键字 → 命中的学生 ID 集合（按昵称/用户名模糊匹配）
+        List<Long> hitUserIds = null;
+        if (keyword != null && !keyword.isBlank()) {
+            String kw = keyword.trim();
+            List<User> users = userMapper.selectList(new LambdaQueryWrapper<User>()
+                    .and(w -> w.like(User::getNickname, kw).or().like(User::getUsername, kw)));
+            hitUserIds = users.stream().map(User::getId).toList();
+            if (hitUserIds.isEmpty()) {
+                // 无匹配学生，直接返回空页
+                return new Page<>(page, size);
+            }
+        }
         LambdaQueryWrapper<CourseExchangeRecord> wrapper = new LambdaQueryWrapper<CourseExchangeRecord>()
-                .eq(userId != null, CourseExchangeRecord::getUserId, userId)
+                .in(hitUserIds != null, CourseExchangeRecord::getUserId, hitUserIds)
                 .orderByDesc(CourseExchangeRecord::getCreateTime);
         IPage<CourseExchangeRecord> raw = exchangeMapper.selectPage(new Page<>(page, size), wrapper);
         List<CourseExchangeRecord> records = raw.getRecords();

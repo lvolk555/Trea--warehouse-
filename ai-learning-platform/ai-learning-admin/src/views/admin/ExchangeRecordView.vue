@@ -7,7 +7,7 @@ const loading = ref(false)
 const list = ref([])
 const page = ref(1)
 const total = ref(0)
-const userIdFilter = ref(null)
+const keyword = ref('')
 
 const columns = [
   { title: '学生名称', dataIndex: 'studentName', width: 140 },
@@ -21,7 +21,10 @@ const columns = [
 async function load() {
   loading.value = true
   try {
-    const res = await opsApi.exchangeRecords({ page: page.value, size: 10, userId: userIdFilter.value })
+    const res = await opsApi.exchangeRecords({
+      page: page.value, size: 10,
+      keyword: keyword.value || undefined
+    })
     list.value = res.records
     total.value = Number(res.total)
   } catch (e) {
@@ -31,6 +34,11 @@ async function load() {
   }
 }
 
+function handleSearch() {
+  page.value = 1
+  load()
+}
+
 onMounted(load)
 </script>
 
@@ -38,9 +46,12 @@ onMounted(load)
   <a-card title="兑换记录" :bordered="false">
     <div class="toolbar">
       <a-space wrap>
-        <a-input-number v-model:value="userIdFilter" placeholder="按学生 ID 筛选" :min="1" style="width: 160px" />
-        <a-button type="primary" @click="() => { page = 1; load() }">查询</a-button>
-        <a-button @click="() => { userIdFilter = null; page = 1; load() }">重置</a-button>
+        <a-input
+          v-model:value="keyword" placeholder="按学生名称/用户名搜索" allow-clear style="width: 200px"
+          @press-enter="handleSearch"
+        />
+        <a-button type="primary" @click="handleSearch">查询</a-button>
+        <a-button @click="() => { keyword = ''; page = 1; load() }">重置</a-button>
       </a-space>
     </div>
     <a-table :columns="columns" :data-source="list" :loading="loading" row-key="id"

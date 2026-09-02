@@ -20,6 +20,8 @@ import com.ailearning.module.exam.mapper.ExamRecordMapper;
 import com.ailearning.module.exam.mapper.QuestionMapper;
 import com.ailearning.module.exam.service.ExamService;
 import com.ailearning.module.points.service.PointsService;
+import com.ailearning.module.user.entity.User;
+import com.ailearning.module.user.mapper.UserMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -55,6 +57,7 @@ public class AiGenerateService {
     private final ExamRecordMapper examRecordMapper;
     private final ExamAnswerMapper examAnswerMapper;
     private final PointsService pointsService;
+    private final UserMapper userMapper;
 
     /** 来源：2 AI 生成 */
     private static final int SOURCE_AI = 2;
@@ -182,6 +185,13 @@ public class AiGenerateService {
         List<ExamAnswer> answers = examAnswerMapper.selectList(new LambdaQueryWrapper<ExamAnswer>()
                 .in(ExamAnswer::getRecordId, records.stream().map(ExamRecord::getId).toList())
                 .isNull(ExamAnswer::getAiScore));
+
+        // 学生名称映射（昵称优先，回退用户名），前端只展示名称不展示 ID
+        List<Long> studentIds = records.stream().map(ExamRecord::getStudentId).distinct().toList();
+        Map<Long, User> userMap = studentIds.isEmpty() ? Map.of()
+                : userMapper.selectBatchIds(studentIds).stream()
+                        .collect(java.util.stream.Collectors.toMap(User::getId, u -> u));
+
         List<Map<String, Object>> result = new ArrayList<>();
         Map<Long, Exam> examMap = new HashMap<>();
         exams.forEach(e -> examMap.put(e.getId(), e));
@@ -201,6 +211,10 @@ public class AiGenerateService {
             item.put("referenceAnswer", question.getAnswer());
             item.put("studentAnswer", answer.getStudentAnswer());
             item.put("studentId", record != null ? record.getStudentId() : null);
+            User student = record != null ? userMap.get(record.getStudentId()) : null;
+            item.put("studentName", student == null ? "未知学生"
+                    : (student.getNickname() != null && !student.getNickname().isBlank()
+                            ? student.getNickname() : student.getUsername()));
             result.add(item);
         }
         return result;
