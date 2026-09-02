@@ -418,11 +418,9 @@ const menuBtn = document.getElementById('menuBtn');
 const sidebar = document.getElementById('sidebar');
 menuBtn.addEventListener('click', () => sidebar.classList.toggle('open'));
 
-// 点击目录项后自动收起（手机端）
+// 点击目录项后自动收起（open 仅是手机端显示开关，桌面端常显不受影响，故无条件移除）
 document.querySelectorAll('#nav a').forEach(a => {
-  a.addEventListener('click', () => {
-    if (window.innerWidth < 900) sidebar.classList.remove('open');
-  });
+  a.addEventListener('click', () => sidebar.classList.remove('open'));
 });
 
 // 滚动高亮当前章节
