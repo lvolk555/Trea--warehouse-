@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>企业级全栈开发规范（通用型）</title>
+<style>
+:root {
+  --primary: #2563eb;
+  --primary-dark: #1d4ed8;
+  --bg: #f8fafc;
+  --card: #ffffff;
+  --text: #1e293b;
+  --muted: #64748b;
+  --border: #e2e8f0;
+  --code-bg: #f1f5f9;
+  --green: #16a34a;
+  --amber: #d97706;
+  --red: #dc2626;
+  --radius: 12px;
+  --shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 14px rgba(0,0,0,.04);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 70px; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  background: var(--bg); color: var(--text);
+  line-height: 1.7; font-size: 15px;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* ===== 顶部栏 ===== */
+header {
+  position: sticky; top: 0; z-index: 100;
+  background: linear-gradient(135deg, #1e3a8a, var(--primary));
+  color: #fff; padding: 14px 18px;
+  display: flex; align-items: center; gap: 12px;
+  box-shadow: 0 2px 8px rgba(30,58,138,.3);
+}
+header .logo {
+  width: 36px; height: 36px; flex-shrink: 0;
+  background: rgba(255,255,255,.18); border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 19px; font-weight: 800;
+}
+header .titles { flex: 1; min-width: 0; }
+header h1 { font-size: 16px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+header .sub { font-size: 12px; opacity: .85; }
+#menuBtn {
+  background: rgba(255,255,255,.15); border: none; color: #fff;
+  width: 38px; height: 38px; border-radius: 9px; font-size: 17px;
+  cursor: pointer; flex-shrink: 0;
+}
+
+/* ===== 布局 ===== */
+.layout { display: flex; max-width: 1200px; margin: 0 auto; gap: 20px; padding: 18px; }
+aside {
+  width: 250px; flex-shrink: 0; position: sticky; top: 70px;
+  align-self: flex-start; max-height: calc(100vh - 90px);
+  overflow-y: auto; display: none;
+}
+aside.open { display: block; }
+nav {
+  background: var(--card); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 12px; position: relative;
+}
+nav a {
+  display: block; padding: 8px 12px; border-radius: 8px;
+  color: var(--text); text-decoration: none; font-size: 13.5px;
+  margin-bottom: 2px;
+}
+nav a:hover { background: #eff6ff; color: var(--primary); }
+nav a.active { background: #eff6ff; color: var(--primary); font-weight: 600; }
+main { flex: 1; min-width: 0; }
+
+/* ===== 区块卡片 ===== */
+section {
+  background: var(--card); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 20px 18px;
+  margin-bottom: 18px; scroll-margin-top: 70px;
+}
+section h2 {
+  font-size: 18px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
+  padding-bottom: 10px; border-bottom: 2px solid var(--border);
+}
+section h2 .num {
+  background: var(--primary); color: #fff; width: 26px; height: 26px; border-radius: 7px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 13px; flex-shrink: 0;
+}
+section h3 { font-size: 15.5px; margin: 18px 0 8px; color: var(--primary-dark); }
+
+/* ===== 表格（响应式） ===== */
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 10px 0; border-radius: 8px; border: 1px solid var(--border); }
+table { border-collapse: collapse; width: 100%; min-width: 480px; background: #fff; }
+th { background: #f0f7ff; font-size: 13px; }
+th, td { padding: 9px 12px; text-align: left; border-bottom: 1px solid var(--border); font-size: 13.5px; vertical-align: top; }
+tr:last-child td { border-bottom: none; }
+td:first-child { white-space: nowrap; }
+
+/* ===== 代码块 ===== */
+pre {
+  background: var(--code-bg); border: 1px solid var(--border);
+  border-radius: 9px; padding: 13px; margin: 10px 0;
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+  font-size: 12.5px; line-height: 1.6;
+}
+code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+pre code { background: none; padding: 0; }
+:not(pre) > code {
+  background: var(--code-bg); padding: 2px 6px; border-radius: 5px;
+  font-size: 12.5px; color: var(--primary-dark); word-break: break-all;
+}
+
+/* ===== 徽章/提示 ===== */
+.rule {
+  display: flex; gap: 10px; align-items: flex-start;
+  background: #f0fdf4; border: 1px solid #bbf7d0; border-left: 4px solid var(--green);
+  border-radius: 9px; padding: 11px 13px; margin-bottom: 8px;
+}
+.rule .idx {
+  background: var(--green); color: #fff; width: 22px; height: 22px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; flex-shrink: 0; margin-top: 1px;
+}
+.rule b { font-size: 14px; }
+.rule p { font-size: 13px; color: var(--muted); margin-top: 2px; }
+.tip {
+  background: #fffbeb; border: 1px solid #fde68a; border-left: 4px solid var(--amber);
+  border-radius: 9px; padding: 11px 13px; margin: 10px 0; font-size: 13.5px;
+}
+.tip b { color: var(--amber); }
+.danger { border-left-color: var(--red); background: #fef2f2; border-color: #fecaca; }
+.danger b { color: var(--red); }
+
+ul, ol { padding-left: 22px; margin: 8px 0; }
+li { margin: 4px 0; font-size: 14px; }
+
+/* ===== 路由树图示 ===== */
+.tree {
+  background: #f8fafc; border: 1px dashed #94a3b8; border-radius: 9px;
+  padding: 13px; margin: 10px 0; font-size: 13px;
+  font-family: ui-monospace, Menlo, monospace; overflow-x: auto; white-space: pre;
+}
+.tree .lv1 { color: var(--red); font-weight: 700; }
+.tree .lv2 { color: var(--amber); font-weight: 700; }
+.tree .lv3 { color: var(--green); font-weight: 700; }
+
+/* ===== 流程步骤 ===== */
+.flow { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+.flow .step {
+  background: #eff6ff; color: var(--primary-dark); border: 1px solid #bfdbfe;
+  border-radius: 999px; padding: 5px 13px; font-size: 13px; font-weight: 600;
+  display: flex; align-items: center; gap: 5px;
+}
+.flow .arrow { color: var(--muted); align-self: center; font-size: 13px; }
+
+footer { text-align: center; padding: 26px 16px 40px; color: var(--muted); font-size: 12.5px; }
+
+/* ===== 手机端 ===== */
+@media (min-width: 900px) {
+  aside { display: block; }
+  #menuBtn { display: none; }
+  body { font-size: 15.5px; }
+  section { padding: 26px 28px; }
+  .layout { padding: 22px; }
+}
+@media (max-width: 480px) {
+  section { padding: 16px 14px; }
+  section h2 { font-size: 16.5px; }
+  td:first-child { white-space: normal; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">S</div>
+  <div class="titles">
+    <h1>企业级全栈开发规范</h1>
+    <div class="sub">Spring Boot 3 + Vue3 前后端分离 · 通用型 · 手机/电脑友好</div>
+  </div>
+  <button id="menuBtn" aria-label="目录">☰ 目录</button>
+</header>
+
+<div class="layout">
+<aside id="sidebar">
+  <nav id="nav">
+    <a href="#principles" class="active">核心原则</a>
+    <a href="#routing">路由三级标准</a>
+    <a href="#workflow">标准开发流程</a>
+    <a href="#backend">后端规范</a>
+    <a href="#frontend">前端规范</a>
+    <a href="#bugfix">Bug 修复动作</a>
+    <a href="#env">环境纪律</a>
+    <a href="#templates">代码模板索引</a>
+  </nav>
+</aside>
+
+<main>
+
+<section id="principles">
+  <h2><span class="num">1</span>核心原则（不可违反）</h2>
+  <div class="rule"><div class="idx">1</div><div><b>前后端分离</b><p>后端只出 REST API；前端独立工程、独立端口，只走相对路径 <code>/api</code>（经 Vite 代理转发）。</p></div></div>
+  <div class="rule"><div class="idx">2</div><div><b>路由三级标准</b><p>一级 = 布局壳，二级 = 功能分类（分组菜单），三级 = 功能页面。详见第 2 节。</p></div></div>
+  <div class="rule"><div class="idx">3</div><div><b>界面零技术标识</b><p>前端不显示数据库 ID、内部编码；列表/标签/筛选一律用名称（展示名优先，回退登录名）。</p></div></div>
+  <div class="rule"><div class="idx">4</div><div><b>移动端一等公民</b><p>所有列表页 768px 断点双布局（桌面表格 / 移动卡片）。</p></div></div>
+  <div class="rule"><div class="idx">5</div><div><b>数据一致性</b><p>删除主实体必须同事务级联清理关联数据；禁止孤儿记录。</p></div></div>
+  <div class="rule"><div class="idx">6</div><div><b>安全内建</b><p>鉴权在 service 入口；数据权限统一校验；敏感配置脱敏；危险操作二次确认。</p></div></div>
+  <div class="rule"><div class="idx">7</div><div><b>阶段化交付 + 测试收口</b><p>功能完成 ≠ 完成；三层测试通过才算完成。</p></div></div>
+  <div class="rule"><div class="idx">8</div><div><b>文档即代码</b><p>每阶段技术报告进 <code>docs/</code>，随代码同步仓库。</p></div></div>
+  <div class="rule"><div class="idx">9</div><div><b>参数编码兼容</b><p>前端 query 参数二次编码 + 后端容错解码，保证直连/代理两种路径中文参数行为一致。</p></div></div>
+</section>
+
+<section id="routing">
+  <h2><span class="num">2</span>路由三级标准（强制结构）</h2>
+  <p>所有管理端功能页面必须遵循：<b>一级路由为布局壳（MainLayout），二级路由为功能分类（分组菜单），三级路由为具体功能页面。</b></p>
+
+  <h3>结构定义（以"用户管理"为例，可为任意分类）</h3>
+  <div class="tree"><span class="lv1">/                      ← 一级：布局壳（侧边栏+顶栏+内容区）</span>
+└── admin/user           <span class="lv2">← 二级：功能分类（分组菜单）</span>
+    ├── /admin/user/member   <span class="lv3">← 三级：功能页「会员管理」</span>
+    ├── /admin/user/staff    <span class="lv3">← 三级：功能页「员工管理」</span>
+    └── /admin/user/manager  <span class="lv3">← 三级：功能页「管理员账号」</span></div>
+
+  <h3>路由代码标准</h3>
+  <pre><code>// router/index.js —— 二级分类 + 三级功能页
+{
+  path: 'admin/user',                                   // 二级：功能分类
+  component: () =&gt; import('../layouts/RouteGroup.vue'), // 分组容器
+  children: [
+    { path: 'member',  name: 'user-member',
+      component: () =&gt; import('../views/admin/user/UserMemberView.vue') },
+    { path: 'staff',  name: 'user-staff',
+      component: () =&gt; import('../views/admin/user/UserStaffView.vue') },
+    { path: 'manager', name: 'user-manager',
+      component: () =&gt; import('../views/admin/user/ManagerAccountView.vue') },
+    { path: '', redirect: { name: 'user-member' } }     // 默认跳第一个子页
+  ]
+}</code></pre>
+
+  <div class="tip"><b>菜单对齐：</b>菜单 key 与路由 name 严格一致；用 <code>developedRoutes</code> 白名单控制菜单可见性（未开发的入口不上线）。</div>
+
+  <h3>页面复用标准</h3>
+  <p>同一分类下多个三级页面，若 UI 逻辑相同仅数据域不同，<b>必须抽参数化共用组件</b>：</p>
+  <pre><code>views/admin/user/
+├── UserList.vue           # 共用组件：接收 type prop（区分数据域）
+├── UserMemberView.vue     # 薄壳：&lt;UserList :type="1" title="会员管理" /&gt;
+├── UserStaffView.vue      # 薄壳：&lt;UserList :type="2" title="员工管理" /&gt;
+└── ManagerAccountView.vue # 薄壳：&lt;UserList :type="3" title="管理员账号" /&gt;</code></pre>
+
+  <h3>新增功能时的路由决策</h3>
+  <div class="table-wrap"><table>
+    <tr><th>场景</th><th>决策</th></tr>
+    <tr><td>全新功能域（如"营销管理"）</td><td>新建二级分类（分组菜单）+ 若干三级页</td></tr>
+    <tr><td>已有分类下加页面</td><td>该分类 children 加一条三级路由 + 薄壳视图</td></tr>
+    <tr><td>单一页面功能（如"系统设置"）</td><td>可直接二级路由挂功能页，不必强行分组</td></tr>
+    <tr><td>同类多功能同构（按类型/角色）</td><td>三级页面 + 参数化共用组件（禁止复制多份页面代码）</td></tr>
+  </table></div>
+</section>
+
+<section id="workflow">
+  <h2><span class="num">3</span>标准开发流程（每次需求必走）</h2>
+  <div class="flow">
+    <span class="step">需求拆解</span><span class="arrow">→</span>
+    <span class="step">数据库</span><span class="arrow">→</span>
+    <span class="step">后端</span><span class="arrow">→</span>
+    <span class="step">前端</span><span class="arrow">→</span>
+    <span class="step">三层测试</span><span class="arrow">→</span>
+    <span class="step">技术报告</span><span class="arrow">→</span>
+    <span class="step">仓库同步</span>
+  </div>
+  <ol>
+    <li><b>需求拆解</b>：拆成可测试要点表（# / 要点 / 实现方式），建 todo 清单，完成一项勾一项；</li>
+    <li><b>开发顺序</b>：数据库（<code>sql/init.sql</code>）→ 后端（entity → mapper → service → controller）→ 前端（api 封装 → 共用组件 → 薄壳视图 → 路由 → 菜单）→ 浏览器联调；</li>
+    <li><b>三层测试</b>：接口测试（含权限边界 403 用例）→ 浏览器测试（真实用户路径）→ 回归测试（重跑受影响模块）；</li>
+    <li><b>文档归档</b>：写《阶段N技术报告-主题.md》进 <code>docs/</code>；</li>
+    <li><b>仓库同步</b>：<code>sync.sh</code>（rsync 排除构建产物 + 条件 commit + push）。</li>
+  </ol>
+  <div class="tip"><b>回归必测清单：</b>受影响模块既有接口 · 权限边界 403 · 中文/ASCII 搜索（直连/代理两种路径）· 文件上传（若加过滤器）· 之前修过的 Bug 不复发。</div>
+</section>
+
+<section id="backend">
+  <h2><span class="num">4</span>后端规范（Spring Boot 3 + MyBatis-Plus + Sa-Token）</h2>
+  <h3>分层与模块化</h3>
+  <pre><code>com.&lt;org&gt;.&lt;project&gt;/
+├── common/     # Result / BizException / GlobalExceptionHandler / UserContext
+├── config/     # SaToken / CORS / MybatisPlus / Web 资源 / 过滤器
+└── module/&lt;领域&gt;/
+    ├── controller/   # 按角色拆分：AdminXxx / OwnerXxx / MemberXxx
+    ├── service/
+    ├── mapper/
+    ├── entity/
+    └── dto/</code></pre>
+  <div class="table-wrap"><table>
+    <tr><th>层</th><th>职责</th><th>禁止</th></tr>
+    <tr><td>Controller</td><td>参数接收/校验、调 service、包装 Result</td><td>写业务逻辑、直接调 mapper</td></tr>
+    <tr><td>Service</td><td>鉴权、业务规则、事务、组合查询</td><td>操作 HttpRequest</td></tr>
+    <tr><td>Mapper</td><td>单表 CRUD（BaseMapper）</td><td>写跨业务 join</td></tr>
+    <tr><td>Entity</td><td>表映射</td><td>直接当 VO 暴露给前端</td></tr>
+  </table></div>
+
+  <h3>核心红线</h3>
+  <ul>
+    <li><b>鉴权在 service 入口第一行</b>：<code>UserContext.checkRole(...)</code>；数据权限抽 <code>checkXxxAccess()</code>（归属者只能操作自己的资源，管理员放行）；</li>
+    <li>统一响应：成功 <code>Result.ok(data)</code>；失败抛 <code>BizException("面向用户的提示")</code>；</li>
+    <li>关联名称批量 <code>selectBatchIds</code> 建 Map（<b>禁止 N+1</b>）；</li>
+    <li><b>列表接口返回名称不返回裸 ID</b>：VO 加名称字段（展示名优先回退登录名，缺失给兜底文案）；筛选入参用 <code>keyword</code> 按名称模糊匹配（先命中 ID 集合再过滤，无命中返回空页）；</li>
+    <li>多表写必须 <code>@Transactional(rollbackFor = Exception.class)</code>；删除级联清理；不许删除当前登录账号自己；</li>
+    <li>敏感配置存 <code>system_config</code>：回显脱敏（前4后4打码）、留空跳过（不覆盖）、指纹缓存热更新；默认值放 yml 用 <code>${KEY:默认}</code> 占位；</li>
+    <li>外部服务集成（AI/支付/短信等）：统一入口检查开关+配置；429 指数退避（最多 2 次）；超时放宽；降级给业务提示不裸抛堆栈；</li>
+    <li>建表 SQL 全进 <code>init.sql</code>，字段必带 COMMENT，必备 <code>id/create_time</code>，唯一键 <code>uk_*</code> 索引 <code>idx_*</code>；</li>
+    <li>文件上传 UUID 重命名；全局过滤器跳过 multipart 请求。</li>
+  </ul>
+</section>
+
+<section id="frontend">
+  <h2><span class="num">5</span>前端规范（Vue 3 + Vite 多端工程）</h2>
+  <h3>工程组织</h3>
+  <p>按用户群拆独立前端工程（UI 库可按端选择，如管理端 Ant Design Vue、用户端 Naive UI），各工程固定独立端口。结构：<code>api/ views/ components/ layouts/ router/ stores/ utils/</code>。</p>
+
+  <h3>axios 统一封装</h3>
+  <pre><code>// utils/request.js 核心要点
+const request = axios.create({
+  baseURL: '/api',
+  timeout: 15000,
+  // 参数二次编码：兼容代理预解码，配合后端容错解码，直连/代理行为一致
+  paramsSerializer: {
+    serialize: (params) =&gt; {
+      const parts = []
+      Object.keys(params || {}).forEach((key) =&gt; {
+        const v = params[key]
+        if (v === undefined || v === null || v === '') return
+        parts.push(`${encodeURIComponent(key)}=${encodeURIComponent(String(v)).replace(/%/g, '%25')}`)
+      })
+      return parts.join('&amp;')
+    }
+  }
+})
+// 请求拦截：附加 Bearer token（localStorage 键按端隔离）
+// 响应拦截：解包 {code,message,data}；401 自动登出</code></pre>
+
+  <h3>核心红线</h3>
+  <ul>
+    <li>页面里<b>不直接写 axios</b>，统一走封装实例；接口按后端模块分文件封装；</li>
+    <li><b>路由三级标准</b>（第 2 节，最高优先级）；</li>
+    <li><b>移动端强制适配</b>：<code>isMobile = window.innerWidth &lt;= 768</code> + resize 监听（onUnmounted 移除）；桌面表格/移动卡片双布局；弹窗 <code>:width="isMobile ? '92%' : 520"</code>；模板中不直接访问 <code>window</code>；</li>
+    <li>UI 准则：不显示 ID 一律名称；筛选是名称文本搜索框不是 ID 数字框；删除 <code>Modal.confirm</code> 二次确认；当前账号行显示"当前账号"且无操作按钮；列表标配 spin/empty/分页；操作即时 message 反馈；</li>
+    <li>Vite：固定端口 + <code>/api</code> 代理到后端，前端只请求相对路径。</li>
+  </ul>
+
+  <h3>UI 提交前自查清单</h3>
+  <div class="table-wrap"><table>
+    <tr><th>检查项</th><th>要求</th></tr>
+    <tr><td>ID 暴露</td><td>列表/标签/详情无任何数据库 ID（一律名称，展示名优先）</td></tr>
+    <tr><td>筛选控件</td><td>名称文本搜索框，不是 ID 数字框</td></tr>
+    <tr><td>路由结构</td><td>符合三级标准（分类分组 + 功能页）</td></tr>
+    <tr><td>移动端</td><td>列表页 isMobile 双布局；弹窗/抽屉宽度自适应</td></tr>
+    <tr><td>window 访问</td><td>模板中无直接访问（用 isMobile 响应式变量）</td></tr>
+    <tr><td>危险操作</td><td>Modal.confirm 二次确认，文案说明后果</td></tr>
+    <tr><td>当前账号</td><td>显示"当前账号"标识且无编辑/删除按钮</td></tr>
+    <tr><td>列表三件套</td><td>spin 加载态 / empty 空态 / 分页（pageSize 10 + 总数）</td></tr>
+  </table></div>
+</section>
+
+<section id="bugfix">
+  <h2><span class="num">6</span>Bug 修复标准动作</h2>
+  <div class="flow">
+    <span class="step">复现</span><span class="arrow">→</span>
+    <span class="step">定位</span><span class="arrow">→</span>
+    <span class="step">根因</span><span class="arrow">→</span>
+    <span class="step">最小修复</span><span class="arrow">→</span>
+    <span class="step">回归</span><span class="arrow">→</span>
+    <span class="step">记录</span>
+  </div>
+  <ol>
+    <li><b>复现</b>：用最小步骤稳定复现；</li>
+    <li><b>定位</b>：看后端日志确认请求是否到达 → 区分前端 / 代理 / 网关 / 后端；</li>
+    <li><b>根因</b>：写清楚为什么会发生（不是猜）；</li>
+    <li><b>修复</b>：最小改动 + 兼容新旧两种路径；</li>
+    <li><b>回归</b>：修复场景 + 相邻场景（直连/代理、中文/ASCII、普通请求/上传组合）；</li>
+    <li><b>记录</b>：写入当阶段报告（现象→排查→根因→方案）。</li>
+  </ol>
+</section>
+
+<section id="env">
+  <h2><span class="num">7</span>环境纪律</h2>
+  <ul>
+    <li>后端从工程根目录启动 jar（静态资源/相对路径依赖工作目录）；</li>
+    <li>受限网络环境出网给 JVM 加 <code>-Dhttp(s).proxyHost/Port</code>；</li>
+    <li>排障先看日志再改代码，不凭猜测；</li>
+    <li>端口规划互不冲突（后端、各前端工程各占一个固定端口）。</li>
+  </ul>
+  <div class="tip danger"><b>铁律：</b>排障先看日志再改代码，不凭猜测下结论。</div>
+</section>
+
+<section id="templates">
+  <h2><span class="num">8</span>代码模板索引</h2>
+  <p>完整可复制的代码模板（agent 与人类通用）位于本规范目录：</p>
+  <div class="table-wrap"><table>
+    <tr><th>文件</th><th>内容</th></tr>
+    <tr><td>SKILL.md</td><td>本规范全文（TRAE skill 格式，agent 直接加载）</td></tr>
+    <tr><td>templates/backend-template.md</td><td>后端全套：Result/BizException/UserContext、按角色拆 Controller、数据权限、级联删除、按名称筛选、敏感配置、外部服务纪律、建表 SQL</td></tr>
+    <tr><td>templates/frontend-template.md</td><td>前端全套：axios 封装、三级路由完整写法、菜单对齐、共用组件+薄壳视图、移动端双布局、Vite 配置、UI 自查清单</td></tr>
+    <tr><td>templates/workflow-template.md</td><td>流程剧本：需求拆解表、三层测试脚本、阶段技术报告模板、sync.sh、Bug 修复剧本、阶段划分参考</td></tr>
+  </table></div>
+  <div class="tip"><b>使用方式：</b>电脑端/手机端直接打开本页浏览；开发时把 SKILL.md 交给 AI（或放入 <code>.trae/skills/</code>）；写代码时对照 templates 照抄替换。</div>
+</section>
+
+</main>
+</div>
+
+<footer>企业级全栈开发规范 · 通用型 · 电脑/手机/平板均可友好阅读 · 随仓库同步更新</footer>
+
+<script>
+// 手机端目录开关
+const menuBtn = document.getElementById('menuBtn');
+const sidebar = document.getElementById('sidebar');
+menuBtn.addEventListener('click', () => sidebar.classList.toggle('open'));
+
+// 点击目录项后自动收起（手机端）
+document.querySelectorAll('#nav a').forEach(a => {
+  a.addEventListener('click', () => {
+    if (window.innerWidth < 900) sidebar.classList.remove('open');
+  });
+});
+
+// 滚动高亮当前章节
+const sections = document.querySelectorAll('main section');
+const links = document.querySelectorAll('#nav a');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      links.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#' + e.target.id));
+    }
+  });
+}, { rootMargin: '-30% 0px -60% 0px' });
+sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>

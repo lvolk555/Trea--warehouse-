@@ -8,10 +8,18 @@
 
 | 文件 | 内容 | 使用时机 |
 |------|------|----------|
-| [SKILL.md](./SKILL.md) | 主规范：核心原则 + 路由三级标准 + 前后端红线 + 流程 | 所有开发任务的总纲 |
+| [index.html](./index.html) | **网页版规范**（响应式，电脑/手机/平板浏览器直接打开阅读） | 任何平台随时查阅 |
+| [SKILL.md](./SKILL.md) | 主规范：核心原则 + 路由三级标准 + 前后端红线 + 流程（agent 可读） | 所有开发任务的总纲 |
 | [templates/backend-template.md](./templates/backend-template.md) | 后端全套代码模板（分层/鉴权/事务/级联/敏感配置/外部服务） | 编写后端代码时照抄替换 |
 | [templates/frontend-template.md](./templates/frontend-template.md) | 前端全套代码模板（axios 封装/三级路由/共用组件/移动端适配） | 编写前端代码时照抄替换 |
 | [templates/workflow-template.md](./templates/workflow-template.md) | 流程剧本（拆解表/三层测试/阶段报告/sync.sh/Bug 修复） | 每个需求/阶段执行时 |
+
+## 双版本说明（任何平台可用）
+
+- **网页版 `index.html`**：单文件响应式页面，零依赖离线可用——手机/平板/电脑浏览器直接打开即可阅读，自动适配屏幕宽度（桌面带侧边目录，手机顶部按钮唤起目录）；
+- **Markdown 版 `SKILL.md` + `templates/`**：供 AI agent（TRAE / Claude Code / Cursor 等）直接加载执行的机器可读格式。
+
+两者内容同源：网页版给"人看"，markdown 给"AI 执行"。
 
 ## 核心理念（一分钟版）
 
