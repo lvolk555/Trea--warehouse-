@@ -379,4 +379,7 @@ onBeforeUnmount(() => {
 .article-content :deep(ul), .article-content :deep(ol) { padding-left: 24px; margin: 8px 0; }
 .article-content :deep(img) { max-width: 100%; border-radius: 6px; }
 .article-content :deep(a) { color: #6366f1; }
+.article-content :deep(table) { border-collapse: collapse; margin: 12px 0; display: block; overflow-x: auto; max-width: 100%; }
+.article-content :deep(th), .article-content :deep(td) { border: 1px solid #e5e7eb; padding: 8px 14px; text-align: left; }
+.article-content :deep(th) { background: #f9fafb; font-weight: 600; }
 </style>

@@ -463,6 +463,11 @@ async function handleSave() {
 .article-render :deep(code) { background: #f6f8fa; padding: 1px 4px; border-radius: 4px; }
 .article-render :deep(blockquote) { border-left: 3px solid #d0d7de; margin: 8px 0; padding: 4px 12px; color: #57606a; }
 .article-render :deep(img) { max-width: 100%; }
+.article-render :deep(ul), .article-render :deep(ol) { padding-left: 22px; margin: 8px 0; }
+.article-render :deep(a) { color: #2563eb; }
+.article-render :deep(table) { border-collapse: collapse; margin: 10px 0; display: block; overflow-x: auto; max-width: 100%; }
+.article-render :deep(th), .article-render :deep(td) { border: 1px solid #d9d9d9; padding: 6px 12px; text-align: left; }
+.article-render :deep(th) { background: #f0f2f5; font-weight: 600; }
 
 @media (max-width: 768px) {
   .chapter-head,

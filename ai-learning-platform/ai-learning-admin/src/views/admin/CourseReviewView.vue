@@ -205,6 +205,10 @@ onMounted(loadPending)
 .article-render :deep(blockquote) { border-left: 3px solid #d0d7de; margin: 10px 0; padding: 4px 14px; color: #57606a; }
 .article-render :deep(img) { max-width: 100%; border-radius: 6px; }
 .article-render :deep(a) { color: #1677ff; }
+.article-render :deep(ul), .article-render :deep(ol) { padding-left: 24px; margin: 8px 0; }
+.article-render :deep(table) { border-collapse: collapse; margin: 12px 0; display: block; overflow-x: auto; max-width: 100%; }
+.article-render :deep(th), .article-render :deep(td) { border: 1px solid #e5e7eb; padding: 8px 14px; text-align: left; }
+.article-render :deep(th) { background: #f9fafb; font-weight: 600; }
 .empty {
   color: #9ca3af;
   text-align: center;
