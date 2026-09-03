@@ -1,11 +1,18 @@
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
 import { myScores } from '../../api/exam'
 
+const router = useRouter()
 const message = useMessage()
 const loading = ref(false)
 const scores = ref([])
+
+/** 查看该次考试的题目与作答明细 */
+function viewDetail(recordId) {
+  router.push(`/exam-result/${recordId}`)
+}
 
 async function loadData() {
   loading.value = true
@@ -45,7 +52,10 @@ onMounted(loadData)
             </template>
           </n-thing>
           <template #suffix>
-            <n-tag :type="scoreType(s.score)" size="large" round>{{ s.score }} 分</n-tag>
+            <n-space vertical align="end" :size="8">
+              <n-tag :type="scoreType(s.score)" size="large" round>{{ s.score }} 分</n-tag>
+              <n-button size="small" tertiary type="info" @click="viewDetail(s.recordId)">查看试题</n-button>
+            </n-space>
           </template>
         </n-list-item>
       </n-list>

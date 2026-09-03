@@ -45,4 +45,10 @@ public class StudentExamController {
     public Result<List<Map<String, Object>>> scores() {
         return Result.ok(examService.myScores());
     }
+
+    /** 成绩详情：回看该次考试的题目、作答与判分（仅本人记录） */
+    @GetMapping("/record/{recordId}")
+    public Result<ExamResultVO> recordDetail(@PathVariable Long recordId) {
+        return Result.ok(examService.recordDetail(recordId));
+    }
 }

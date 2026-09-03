@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
+import { examRecordDetail } from '../../api/exam'
 
 const route = useRoute()
 const router = useRouter()
@@ -9,19 +10,28 @@ const message = useMessage()
 
 // 交卷后通过路由 state 传递判分结果
 const result = ref(history.state?.score !== undefined ? history.state : null)
+const loading = ref(false)
 
 const optionLetters = (options) => (options || []).map((_, i) => String.fromCharCode(65 + i))
 
-onMounted(() => {
-  if (!result.value) {
-    message.warning('未找到考试结果')
-    router.replace('/exam')
+onMounted(async () => {
+  if (result.value) return
+  // 从“我的成绩”进入：按记录 ID 拉取答题详情
+  loading.value = true
+  try {
+    result.value = await examRecordDetail(route.params.recordId)
+  } catch (e) {
+    message.error(e.message || '未找到考试结果')
+    router.replace('/scores')
+  } finally {
+    loading.value = false
   }
 })
 </script>
 
 <template>
-  <div v-if="result">
+  <n-spin :show="loading">
+    <div v-if="result">
     <!-- 成绩总览 -->
     <n-card style="text-align: center">
       <n-statistic label="考试得分" tabular-nums>
@@ -66,7 +76,8 @@ onMounted(() => {
         </n-collapse-item>
       </n-collapse>
     </n-card>
-  </div>
+    </div>
+  </n-spin>
 </template>
 
 <style scoped>

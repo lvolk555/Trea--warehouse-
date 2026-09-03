@@ -272,6 +272,56 @@ public class ExamService {
         return result;
     }
 
+    /**
+     * 成绩详情：按考试记录回看每题作答与判分（仅本人已交卷的记录）
+     */
+    public ExamResultVO recordDetail(Long recordId) {
+        UserContext.checkRole(UserContext.ROLE_STUDENT);
+        ExamRecord record = examRecordMapper.selectById(recordId);
+        if (record == null || !record.getStudentId().equals(UserContext.userId())
+                || record.getSubmitTime() == null) {
+            throw new BizException("考试记录不存在");
+        }
+        Exam exam = examMapper.selectById(record.getExamId());
+        if (exam == null) {
+            throw new BizException("试卷不存在");
+        }
+
+        // 该次考试的答题明细按题目归档
+        Map<Long, ExamAnswer> answerMap = new HashMap<>();
+        examAnswerMapper.selectList(new LambdaQueryWrapper<ExamAnswer>()
+                        .eq(ExamAnswer::getRecordId, recordId))
+                .forEach(a -> answerMap.put(a.getQuestionId(), a));
+
+        List<ExamResultVO.AnswerDetail> details = new ArrayList<>();
+        int correctCount = 0;
+        for (QuestionVO vo : questionService.listByIds(parseQuestionIds(exam.getQuestionIds()))) {
+            ExamAnswer answer = answerMap.get(vo.getId());
+            ExamResultVO.AnswerDetail detail = new ExamResultVO.AnswerDetail();
+            detail.setQuestionId(vo.getId());
+            detail.setType(vo.getType());
+            detail.setContent(vo.getContent());
+            detail.setOptions(vo.getOptions());
+            detail.setStudentAnswer(answer != null ? answer.getStudentAnswer() : "");
+            detail.setAnswer(vo.getAnswer());
+            detail.setAnalysis(vo.getAnalysis());
+            detail.setCorrect(answer != null && Integer.valueOf(1).equals(answer.getCorrect()) ? 1 : 0);
+            if (detail.getCorrect() == 1) {
+                correctCount++;
+            }
+            details.add(detail);
+        }
+
+        ExamResultVO result = new ExamResultVO();
+        result.setRecordId(record.getId());
+        result.setExamId(exam.getId());
+        result.setScore(record.getScore());
+        result.setCorrectCount(correctCount);
+        result.setTotalCount(details.size());
+        result.setDetails(details);
+        return result;
+    }
+
     /** 获取已发布试卷，否则抛异常 */
     private Exam getPublishedExam(Long examId) {
         Exam exam = examMapper.selectById(examId);
